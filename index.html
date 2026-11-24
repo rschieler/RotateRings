@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#fdf3e4">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Rotate Rings">
+<title>Rotate Rings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: verspielt, warm, Casual-Puzzle
+   IDEA: ein Holzbrett voller farbiger Kettenglieder, Klammern und Stäbe
+   PICTURE: das Spielfeld selbst; Startseite mit Maskottchen Eichi
+   COLOUR and TYPE: Creme-Holz, kräftige Ringfarben, grüner Akzent; Baloo 2
+   LAYOUT: Leiste oben mit Fortschritt, Brett in der Mitte, drei Knöpfe unten */
+:root{color-scheme:light;--bg1:#fdf3e4;--bg2:#f4dcbc;--ink:#5a3b1c;--card:#fffaf2;--go:#2ec27e;--goD:#1f8a59;--gold:#ffb703}
+*{box-sizing:border-box;min-width:0;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:linear-gradient(180deg,var(--bg1),var(--bg2));font-family:"Baloo 2",ui-rounded,"SF Pro Rounded",system-ui,sans-serif;color:var(--ink);user-select:none;-webkit-user-select:none}
+#app{position:fixed;inset:0;display:flex;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+header{display:flex;align-items:center;gap:8px;padding:10px 12px 2px}
+.lvl{display:flex;flex-direction:column;align-items:center;line-height:1;font-weight:800;min-width:52px}
+.lvl small{font-size:13px;opacity:.65;font-weight:600;white-space:nowrap}
+.lvl span{font-size:26px}
+.pill{background:var(--card);border-radius:999px;padding:6px 12px;box-shadow:0 2px 0 rgba(90,59,28,.15);font-weight:800;font-size:16px;white-space:nowrap}
+.pill small{font-weight:600;opacity:.65}
+.spacer{flex:1}
+button{font:inherit;color:var(--ink);cursor:pointer}
+.icon{border:0;background:var(--card);width:44px;height:44px;border-radius:14px;font-size:20px;font-weight:800;box-shadow:0 3px 0 rgba(90,59,28,.18);display:grid;place-items:center;flex:none}
+.icon:active,.big:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(90,59,28,.2)}
+.icon svg{width:22px;height:22px}
+#prog{display:flex;gap:3px;padding:6px 16px 0;height:16px}
+#prog i{flex:1;border-radius:4px;background:rgba(90,59,28,.13);transition:background .3s}
+#prog i.on{background:var(--go)}
+#stage{flex:1;position:relative;touch-action:none}
+canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+footer{display:flex;justify-content:center;gap:10px;padding:6px 12px 16px}
+.big{border:0;border-radius:18px;padding:10px 18px;min-height:50px;font-weight:800;font-size:18px;background:var(--card);box-shadow:0 4px 0 rgba(90,59,28,.2);display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.big.go{background:var(--go);color:#fff;box-shadow:0 4px 0 var(--goD)}
+.big small{opacity:.85;font-weight:600}
+.big:focus-visible,.icon:focus-visible,.cell:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+#toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:rgba(60,35,10,.9);color:#fff;padding:8px 16px;border-radius:14px;font-size:15px;font-weight:600;opacity:0;transition:.25s;pointer-events:none;max-width:90vw;text-align:center;z-index:20}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.overlay{position:fixed;inset:0;background:rgba(60,35,10,.4);display:none;align-items:center;justify-content:center;z-index:10;padding:20px}
+.overlay.show{display:flex}
+.panel{background:var(--card);border-radius:26px;padding:22px;width:min(380px,100%);text-align:center;box-shadow:0 12px 30px rgba(0,0,0,.25);animation:pop .35s cubic-bezier(.2,1.4,.4,1);max-height:92vh;overflow:auto}
+@keyframes pop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+.panel h2{margin:0 0 4px;font-size:34px;line-height:1.05}
+.panel p{margin:6px 0;font-size:16px;line-height:1.4}
+.panel ul{text-align:left;padding-left:20px;margin:10px 0;font-size:16px;line-height:1.4}
+.panel li{margin:6px 0}
+.stars{font-size:48px;letter-spacing:6px;line-height:1.1;margin:6px 0}
+.stars b{color:#e0d3c0;font-weight:400}.stars b.on{color:var(--gold);text-shadow:0 3px 0 #d68a00}
+.row{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;max-height:55vh;overflow:auto;padding:4px;margin-top:10px}
+.cell{aspect-ratio:1;border-radius:14px;border:0;font-weight:800;font-size:18px;background:#fff;box-shadow:0 3px 0 rgba(90,59,28,.15);line-height:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#5a3b1c}
+.cell small{font-size:11px;color:var(--gold);letter-spacing:1px}
+.cell:disabled{opacity:.35}
+.cell.cur{background:#ffe7b8}
+.cell.t1{box-shadow:0 3px 0 #ff8a3d,inset 0 0 0 2px #ff8a3d}.cell.t2{box-shadow:0 3px 0 #e5383b,inset 0 0 0 2px #e5383b}
+.t1c{color:#e86a10!important;opacity:1!important}.t2c{color:#d62828!important;opacity:1!important}
+/* Startseite */
+#ovStart{background:radial-gradient(circle at 50% 35%,#fff7ea,#f6dcb6 70%);padding:24px}
+.start{position:relative;z-index:1;width:min(400px,100%);display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px}
+.start h1{margin:0;font-size:52px;line-height:1;letter-spacing:.5px;color:#5a3b1c;text-shadow:0 4px 0 rgba(90,59,28,.15)}
+.start h1 span{color:#ef476f}
+.start p{margin:0 0 6px;font-size:17px;line-height:1.35}
+.mascot{width:min(240px,62vw);height:auto;animation:bob 2.4s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-8px) rotate(-2deg)}}
+.deco{position:absolute;z-index:0;opacity:.45;animation:spin 14s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.start .big{width:min(280px,100%);font-size:20px;min-height:56px}
+.startrow{display:flex;gap:10px;width:min(280px,100%)}.startrow .big{flex:1;font-size:17px}
+@media (prefers-reduced-motion:reduce){.panel,.mascot,.deco{animation:none}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="lvl"><small id="tierLbl">Level</small><span id="lvl">1</span></div>
+    <div class="pill" id="moves">Züge 0</div>
+    <div class="pill" id="acorns" aria-label="Eicheln">🌰 0</div>
+    <div class="spacer"></div>
+    <button class="icon" id="bHome" aria-label="Startseite"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3 2 11h3v9h5v-6h4v6h5v-9h3z"/></svg></button>
+    <button class="icon" id="bLevels" aria-label="Levels"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg></button>
+  </header>
+  <div id="prog"></div>
+  <div id="stage"><canvas id="cv"></canvas></div>
+  <footer>
+    <button class="big" id="bRestart" aria-label="Neu starten">↻</button>
+    <button class="big" id="bUndo">↶ Zurück</button>
+    <button class="big go" id="bHint">💡 Tipp <small>5 🌰</small></button>
+  </footer>
+</div>
+<div id="toast"></div>
+
+<div class="overlay show" id="ovStart">
+  <svg class="deco" style="left:6%;top:9%;width:70px" viewBox="0 0 100 100"><path d="M78 30A38 38 0 1 0 82 62" fill="none" stroke="#3a86ff" stroke-width="12" stroke-linecap="round"/></svg>
+  <svg class="deco" style="right:8%;top:16%;width:54px;animation-direction:reverse" viewBox="0 0 100 100"><path d="M78 30A38 38 0 1 0 82 62" fill="none" stroke="#2ec27e" stroke-width="12" stroke-linecap="round"/></svg>
+  <svg class="deco" style="left:10%;bottom:12%;width:58px;animation-duration:10s" viewBox="0 0 100 100"><path d="M78 30A38 38 0 1 0 82 62" fill="none" stroke="#ff9f1c" stroke-width="12" stroke-linecap="round"/></svg>
+  <svg class="deco" style="right:9%;bottom:18%;width:76px;animation-duration:18s" viewBox="0 0 100 100"><path d="M78 30A38 38 0 1 0 82 62" fill="none" stroke="#8338ec" stroke-width="12" stroke-linecap="round"/></svg>
+  <div class="start">
+    <svg class="mascot" viewBox="0 0 200 210" aria-label="Maskottchen Eichi">
+      <ellipse cx="100" cy="198" rx="54" ry="8" fill="rgba(90,50,10,.18)"/>
+      <path d="M34 140A66 21 0 0 1 166 140" fill="none" stroke="#ef476f" stroke-width="13" stroke-linecap="round"/>
+      <ellipse cx="78" cy="186" rx="13" ry="8" fill="#8a5222"/><ellipse cx="122" cy="186" rx="13" ry="8" fill="#8a5222"/>
+      <ellipse cx="100" cy="128" rx="50" ry="60" fill="#c77b30"/>
+      <ellipse cx="80" cy="120" rx="12" ry="30" fill="#e09a52" opacity=".55"/>
+      <path d="M44 96Q100 30 156 96Q100 110 44 96Z" fill="#7a4a1e"/>
+      <g fill="#5d3613" opacity=".6"><circle cx="78" cy="80" r="3"/><circle cx="96" cy="72" r="3"/><circle cx="114" cy="74" r="3"/><circle cx="130" cy="84" r="3"/><circle cx="88" cy="90" r="3"/><circle cx="106" cy="88" r="3"/><circle cx="122" cy="94" r="3"/></g>
+      <path d="M100 56q2-18 18-24" stroke="#5a3410" stroke-width="7" stroke-linecap="round" fill="none"/>
+      <ellipse cx="82" cy="126" rx="9" ry="11" fill="#2b1a0b"/><circle cx="85" cy="121" r="3.6" fill="#fff"/>
+      <ellipse cx="118" cy="126" rx="9" ry="11" fill="#2b1a0b"/><circle cx="121" cy="121" r="3.6" fill="#fff"/>
+      <ellipse cx="68" cy="144" rx="8" ry="5" fill="#ff8fa3" opacity=".75"/><ellipse cx="132" cy="144" rx="8" ry="5" fill="#ff8fa3" opacity=".75"/>
+      <path d="M88 146Q100 160 112 146" stroke="#2b1a0b" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <path d="M34 140A66 21 0 0 0 138 159" fill="none" stroke="#ef476f" stroke-width="13" stroke-linecap="round"/>
+      <ellipse cx="44" cy="146" rx="9" ry="7" fill="#b06a28"/><ellipse cx="156" cy="138" rx="9" ry="7" fill="#b06a28"/>
+    </svg>
+    <h1>Rotate <span>Rings</span></h1>
+    <p>Hallo, ich bin <b>Eichi</b>! Dreh die Ringe und löse sie alle.</p>
+    <button class="big go" id="bPlay">▶ Spielen <small id="startLvl"></small></button>
+    <div class="startrow"><button class="big" id="bStartLevels">Levels</button><button class="big" id="bStartHelp">Regeln</button></div>
+    <div class="startrow"><button class="big" id="bSound"></button><div class="big" id="startAcorns" style="box-shadow:none;background:transparent"></div></div>
+  </div>
+</div>
+
+<div class="overlay" id="ovHelp"><div class="panel">
+  <h2>So geht's</h2>
+  <ul>
+    <li><b>Antippen</b> dreht einen Ring um 30°, <b>Ziehen</b> dreht ihn frei.</li>
+    <li>Jeder Ring hat eine <b>Lücke</b>. Wo zwei Ringe verhakt sind, muss die Lücke eines der beiden genau auf dem Kreuzungspunkt liegen.</li>
+    <li><b>Klammern</b> halten Ringe zusammen – dreh die Lücke auf die Klammer.</li>
+    <li>Sind alle Verbindungen offen, <b>fliegt der Ring weg</b>. Ein heller Punkt zeigt eine offene Verbindung.</li>
+    <li>Graue Ringe mit <b>Schloss</b> und <b>Stäbe</b> lassen sich nicht drehen – die Nachbarn müssen ihre Lücken auf sie richten.</li>
+    <li><b>💣 Bomben</b> zählen bei jedem Zug herunter. Löse den Ring, bevor sie bei 0 explodiert.</li>
+    <li>Ringe mit <b>Eichel</b> bringen 🌰. Ein Tipp kostet 5 🌰. <b>↶ Zurück</b> macht einen Zug rückgängig.</li>
+    <li>Wenig Züge = ★★★. Jedes 5. Level ist <b>Hard</b>, jedes 10. <b>Super Hard</b>.</li>
+  </ul>
+  <div class="row"><button class="big go" id="bHelpOk">Los geht's</button></div>
+</div></div>
+
+<div class="overlay" id="ovWin"><div class="panel">
+  <h2>Geschafft!</h2>
+  <div class="stars" id="winStars"></div>
+  <p id="winText"></p>
+  <div class="row"><button class="big" id="bAgain">↻ Nochmal</button><button class="big go" id="bNext">Weiter ▶</button></div>
+</div></div>
+
+<div class="overlay" id="ovLose"><div class="panel">
+  <h2>💥 Boom!</h2>
+  <p>Die Bombe ist explodiert.</p>
+  <div class="row"><button class="big" id="bLoseUndo">↶ Zug zurück</button><button class="big go" id="bLoseAgain">↻ Nochmal</button></div>
+</div></div>
+
+<div class="overlay" id="ovLevels"><div class="panel">
+  <h2>Levels</h2>
+  <div class="grid" id="lvGrid"></div>
+  <div class="row"><button class="big" id="bLvClose">Schliessen</button></div>
+</div></div>
+
+<script>
+{
+const TAU=Math.PI*2,D=1.75,DC=2.14,GAP=26*Math.PI/180,OPEN=GAP*0.8,THICK=0.2,STEP=Math.PI/6;
+const PALETTE=['#ef476f','#ff9f1c','#2ec27e','#3a86ff','#8338ec','#06b6d4','#ff5d8f','#f4b400','#e76f51','#5e60ce'];
+const LOCKC='#9aa0a8',BARC='#7d8794',KEY='rotateRings.v1';
+const $=s=>document.querySelector(s);
+const norm=a=>{a=(a+Math.PI)%TAU;if(a<0)a+=TAU;return a-Math.PI};
+const now=()=>performance.now();
+function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function shade(hex,p){const n=parseInt(hex.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;const t=p<0?0:255,k=Math.abs(p);r=Math.round(r+(t-r)*k);g=Math.round(g+(t-g)*k);b=Math.round(b+(t-b)*k);return`rgb(${r},${g},${b})`}
+
+/* ---------- Speicher ---------- */
+const save={max:1,stars:{},level:1,sound:true,seenHelp:false,acorns:20,seen:{}};
+try{Object.assign(save,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){}
+save.seen=save.seen||{};
+const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(save))}catch(e){}};
+
+/* ---------- Levelgenerator ---------- */
+function segDist(p,b){const dx=b.x2-b.x1,dy=b.y2-b.y1,t=Math.max(0,Math.min(1,((p.x-b.x1)*dx+(p.y-b.y1)*dy)/(dx*dx+dy*dy)));return Math.hypot(p.x-b.x1-dx*t,p.y-b.y1-dy*t)}
+function candidates(type,sp,Hd){
+  const c=[];
+  if(type==='square'){const Wd=5;for(let r=0;r<Hd;r++)for(let k=0;k<Wd;k++)c.push({x:(k-(Wd-1)/2)*sp,y:(r-(Hd-1)/2)*sp})}
+  else{const rh=sp*Math.sqrt(3)/2;for(let r=0;r<Hd;r++){const n=r%2?4:5;for(let k=0;k<n;k++)c.push({x:(k-(n-1)/2)*sp,y:(r-(Hd-1)/2)*rh})}}
+  c.forEach((a,i)=>{a.nb=[];a.mirror=-1;c.forEach((b,j)=>{if(i===j)return;if(Math.abs(Math.hypot(a.x-b.x,a.y-b.y)-sp)<0.01)a.nb.push(j);if(Math.abs(a.x+b.x)<1e-6&&Math.abs(a.y-b.y)<1e-6)a.mirror=j});if(Math.abs(a.x)<1e-6)a.mirror=i});
+  return c;
+}
+function crossings(A,B){
+  const dx=B.x-A.x,dy=B.y-A.y,d=Math.hypot(dx,dy),a=(d*d+A.r*A.r-B.r*B.r)/(2*d),h=Math.sqrt(Math.max(0,A.r*A.r-a*a)),mx=A.x+dx/d*a,my=A.y+dy/d*a,ux=-dy/d,uy=dx/d;
+  return[1,-1].map(s=>{const x=mx+ux*h*s,y=my+uy*h*s;return{x,y,angA:Math.atan2(y-A.y,x-A.x),angB:Math.atan2(y-B.y,x-B.x)}});
+}
+function tier(l){return l%10===0?2:l%5===0?1:0}
+function grow(cand,n,rnd,ex){
+  let start=0,bd=1e9;cand.forEach((c,i)=>{if(Math.abs(c.x)<1e-6&&Math.abs(c.y)<bd){bd=Math.abs(c.y);start=i}});
+  const set=new Set([start]);
+  while(set.size<n){
+    const fr=[];cand.forEach((c,i)=>{if(set.has(i))return;const k=c.nb.filter(j=>set.has(j)).length;if(k)fr.push([i,Math.pow(k,ex)])});
+    if(!fr.length)break;
+    let r=rnd()*fr.reduce((s,f)=>s+f[1],0),pick=fr[0][0];
+    for(const f of fr){r-=f[1];if(r<=0){pick=f[0];break}}
+    set.add(pick);if(cand[pick].mirror>=0)set.add(cand[pick].mirror);
+  }
+  return[...set];
+}
+// 1 = sauber verhakt, 0 = frei, -1 = ungültig
+function rel(A,B){const d=Math.hypot(A.x-B.x,A.y-B.y);if(d>A.r+B.r+0.4)return 0;if(d>Math.abs(A.r-B.r)+0.5&&d<A.r+B.r-0.2)return 1;return-1}
+// Kreuzungspunkte sauber halten: Mindestabstand zueinander und zu fremden Ringen
+function cleanAdd(rs,add){
+  const all=rs.concat(add),pts=[];
+  for(let i=0;i<all.length;i++)for(let j=i+1;j<all.length;j++)if(rel(all[i],all[j])===1)crossings(all[i],all[j]).forEach(p=>pts.push({p,i,j}));
+  for(let k=0;k<pts.length;k++){
+    const{p,i,j}=pts[k];
+    for(let m=k+1;m<pts.length;m++)if(Math.hypot(p.x-pts[m].p.x,p.y-pts[m].p.y)<0.55)return false;
+    for(let c=0;c<all.length;c++){if(c===i||c===j)continue;const C=all[c];if(Math.abs(Math.hypot(p.x-C.x,p.y-C.y)-C.r)<0.38)return false}
+  }
+  return true;
+}
+function freeLayout(n,rnd){
+  const rs=[{x:0,y:0,r:1}],deg=[0];
+  for(let t=0;t<4000&&rs.length<n;t++){
+    const P=rs[Math.floor(rnd()*rs.length)];
+    const r=0.8+rnd()*0.35,a=(rnd()<.5?Math.PI/2:-Math.PI/2)+(rnd()-.5)*2.4,d=(P.r+r)*(0.72+rnd()*0.08);
+    const c={x:P.x+Math.cos(a)*d,y:P.y+Math.sin(a)*d,r};
+    if(Math.abs(c.x)<0.7)c.x=0;
+    if(Math.abs(c.x)>3.3||Math.abs(c.y)>5.4)continue;
+    const add=c.x===0?[c]:[c,{x:-c.x,y:c.y,r}];
+    if(add.length===2&&rel(add[0],add[1])<0)continue;
+    let ok=true;const nd=deg.slice(),own=add.map(()=>0);
+    for(let k=0;k<add.length&&ok;k++)rs.forEach((o,i)=>{const v=rel(add[k],o);if(v<0)ok=false;else if(v){own[k]++;nd[i]++}});
+    if(add.length===2&&rel(add[0],add[1])===1){own[0]++;own[1]++}
+    if(!ok||own.some(v=>v<1||v>2)||nd.some(v=>v>3)||!cleanAdd(rs,add))continue;
+    add.forEach((c,k)=>{rs.push(c);deg.push(own[k])});
+    for(let i=0;i<nd.length;i++)deg[i]=nd[i];
+  }
+  return rs;
+}
+const mk=(k,x,y,r,type)=>({id:k,type:type||'ring',x,y,r,rot:0,links:[],locked:type==='bar',removed:false,removing:null,anim:null,shake:-1e9,acorn:false,bomb:0});
+function generate(l){
+  const rnd=rng(l*7919+13),tr=tier(l);
+  let n=Math.min(3+Math.floor((l-1)*0.9)+tr*2,22);
+  const kind=l===2?'clip':l<=3?'square':['square','clip','free','square','clip','free'][l%6];
+  const ex=l<4?0:l<10?1.5:3;
+  const rs=[],ls=[];
+  const addLink=(a,b,pts)=>{rs[a].links.push(ls.length);rs[b].links.push(ls.length);ls.push({a,b,pts})};
+  if(kind==='clip'){
+    n=Math.min(n,15);
+    const cand=candidates(l%2?'hex':'square',DC,7),cells=grow(cand,n,rnd,l>=6?0:1);
+    const isBar=new Set();
+    if(l>=6){
+      const inSet=new Set(cells);
+      const ok=i=>{const nb=cand[i].nb.filter(j=>inSet.has(j));if(nb.length!==2)return false;const a=cand[nb[0]],b=cand[nb[1]];return Math.abs(a.x+b.x-2*cand[i].x)<1e-6&&Math.abs(a.y+b.y-2*cand[i].y)<1e-6&&!nb.some(j=>isBar.has(j))};
+      cells.forEach(i=>{if(isBar.has(i)||!ok(i)||rnd()>0.8)return;const m=cand[i].mirror;isBar.add(i);if(m!==i&&m>=0){if(ok(m))isBar.add(m);else isBar.delete(i)}});
+    }
+    const map=new Map();
+    cells.forEach(ci=>{const k=rs.length;map.set(ci,k);rs.push(mk(k,cand[ci].x,cand[ci].y,1,isBar.has(ci)?'bar':'ring'))});
+    // Stäbe: Endpunkte an den Nachbarringen
+    cells.forEach(ci=>{if(!isBar.has(ci))return;const b=rs[map.get(ci)],nb=cand[ci].nb.filter(j=>map.has(j)).map(j=>rs[map.get(j)]);
+      const[p,q]=nb;const ux=(q.x-p.x)/Math.hypot(q.x-p.x,q.y-p.y),uy=(q.y-p.y)/Math.hypot(q.x-p.x,q.y-p.y);
+      b.x1=p.x+ux;b.y1=p.y+uy;b.x2=q.x-ux;b.y2=q.y-uy;b.nbIds=[p.id,q.id]});
+    cells.forEach(ci=>{const a=map.get(ci);cand[ci].nb.forEach(j=>{if(!map.has(j))return;const b=map.get(j);if(b<=a)return;
+      const A=rs[a],B=rs[b];const d=Math.hypot(B.x-A.x,B.y-A.y),ux=(B.x-A.x)/d,uy=(B.y-A.y)/d;
+      const R0=A.type==='ring'?A:B,sg=A.type==='ring'?1:-1;
+      const both=A.type==='ring'&&B.type==='ring',x=both?(A.x+B.x)/2:R0.x+ux*sg,y=both?(A.y+B.y)/2:R0.y+uy*sg;
+      addLink(a,b,[{x,y,angA:Math.atan2(uy,ux),angB:Math.atan2(-uy,-ux)}])})});
+  }else{
+    const c=candidates('square',D,6),pts=kind==='free'?freeLayout(n,rnd):grow(c,n,rnd,ex).map(i=>({x:c[i].x,y:c[i].y,r:1}));
+    pts.forEach((p,k)=>rs.push(mk(k,p.x,p.y,p.r)));
+    for(let a=0;a<rs.length;a++)for(let b=a+1;b<rs.length;b++)if(rel(rs[a],rs[b])===1)addLink(a,b,crossings(rs[a],rs[b]));
+  }
+  const nbOf=r=>r.links.map(li=>ls[li].a===r.id?rs[ls[li].b]:rs[ls[li].a]);
+  const order=()=>rs.map(r=>r).sort(()=>rnd()-.5);
+  // Schlösser
+  if(l>=5){
+    const k=Math.min(3+tr,1+Math.floor((l-5)/5)+tr,Math.floor(rs.length/4));let c=0;
+    for(const r of order()){if(c>=k)break;if(r.type!=='ring'||!r.links.length||nbOf(r).some(o=>o.locked))continue;r.locked=true;c++}
+  }
+  // Farben
+  order().forEach(r=>{if(r.type==='bar'){r.color=BARC;return}if(r.locked){r.color=LOCKC;return}const used=new Set(nbOf(r).map(o=>o.color));const opt=PALETTE.filter(p=>!used.has(p));r.color=opt[Math.floor(rnd()*opt.length)]||PALETTE[0]});
+  rs.forEach(r=>{r.dark=shade(r.color,-0.3)});
+  const rings=rs.filter(r=>r.type==='ring');
+  // Eicheln
+  rings.slice().sort(()=>rnd()-.5).slice(0,Math.max(1,Math.floor(rings.length/4))).forEach(r=>r.acorn=true);
+  // Eichel in die Ringmitte, wenn dort Platz ist
+  rings.forEach(r=>{r.acornIn=rs.every(o=>{if(o===r)return true;if(o.type==='bar')return segDist(r,o)>0.5;return Math.abs(Math.hypot(r.x-o.x,r.y-o.y)-o.r)>0.5})});
+  // Bomben
+  const unl=rings.filter(r=>!r.locked).length;
+  if(l>=8&&l%4===3){let k=1+(tr?1:0);for(const r of order()){if(!k)break;if(r.type!=='ring'||r.locked||!r.links.length)continue;r.bomb=unl+6;k--}}
+  // Startlage der Lücken: keine Verbindung offen
+  rings.forEach(r=>{
+    const angs=[];r.links.forEach(li=>{const L=ls[li];L.pts.forEach(p=>angs.push(L.a===r.id?p.angA:p.angB))});
+    let best=0,bs=-1;
+    for(let t=0;t<160;t++){const rot=rnd()*TAU-Math.PI;const s=angs.length?Math.min(...angs.map(a=>Math.abs(norm(a-rot)))):9;if(s>bs){bs=s;best=rot}if(s>OPEN+0.12)break}
+    r.rot=best;
+  });
+  const cx=rs.reduce((s,r)=>s+r.x,0)/rs.length,cy=rs.reduce((s,r)=>s+r.y,0)/rs.length;
+  return{rings:rs,links:ls,par:unl+1,center:{x:cx,y:cy},tier:tr,kind,
+    has:{clip:kind==='clip',bar:rs.some(r=>r.type==='bar'),bomb:rs.some(r=>r.bomb),lock:rs.some(r=>r.type==='ring'&&r.locked)}};
+}
+
+/* ---------- Zustand ---------- */
+let tierNow=0,rings=[],links=[],level=1,moves=0,par=0,center={x:0,y:0},hint=null,drag=null,won=false,lost=false,particles=[],undo=[];
+const cv=$('#cv'),ctx=cv.getContext('2d');let W=0,H=0,DPR=1;const view={s:50,ox:0,oy:0};
+const active=r=>!r.removed&&r.removing===null;
+const other=(L,r)=>L.a===r.id?rings[L.b]:rings[L.a];
+const angOn=(L,r,p)=>L.a===r.id?p.angA:p.angB;
+const covers=(r,a)=>r.type==='ring'&&Math.abs(norm(a-r.rot))<OPEN;
+const linkOpen=L=>L.pts.some(p=>covers(rings[L.a],p.angA)||covers(rings[L.b],p.angB));
+const INTRO={clip:'Neu: Klammern! Dreh eine Lücke auf die Klammer.',lock:'Neu: Schlösser! Richte die Lücken der Nachbarn auf den grauen Ring.',bar:'Neu: Stäbe! Sie lösen sich, wenn beide Klammern offen sind.',bomb:'Achtung Bombe! Löse den Ring, bevor der Zähler 0 erreicht.'};
+
+function startLevel(l){
+  level=l;save.level=l;persist();
+  const g=generate(l);rings=g.rings;links=g.links;par=g.par;center=g.center;tierNow=g.tier;
+  moves=0;hint=null;drag=null;won=false;lost=false;particles=[];undo=[];
+  fit();hud();
+  const nw=Object.keys(INTRO).find(k=>g.has[k]&&!save.seen[k]);
+  if(nw){save.seen[nw]=1;persist();setTimeout(()=>toast(INTRO[nw],4200),400)}
+  else if(tierNow)setTimeout(()=>toast(tierNow===2?'🔥 Super Hard Level!':'🔥 Hard Level!'),300);
+  if(l===1)setTimeout(()=>{if(level===1&&!won)showHint(true)},900);
+}
+function hud(){
+  $('#lvl').textContent=level;const tl=$('#tierLbl');tl.textContent=['Level','Hard','Super Hard'][tierNow];tl.className=tierNow?'t'+tierNow+'c':'';
+  $('#acorns').textContent='🌰 '+save.acorns;$('#moves').innerHTML=`Züge ${moves} <small>· Ziel ${par}</small>`;
+  $('#bSound').textContent=save.sound?'🔊 Ton an':'🔇 Ton aus';$('#startLvl').textContent='· Level '+level;$('#startAcorns').textContent='🌰 '+save.acorns;
+  const pr=$('#prog');if(pr.children.length!==rings.length)pr.innerHTML=rings.map(()=>'<i></i>').join('');
+  const done=rings.filter(r=>r.removed||r.removing!==null).length;[...pr.children].forEach((e,i)=>e.classList.toggle('on',i<done));
+}
+function resize(){const r=$('#stage').getBoundingClientRect();W=r.width;H=r.height;DPR=Math.min(window.devicePixelRatio||1,3);cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);fit()}
+function fit(){
+  if(!rings.length||!W)return;
+  let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;const ext=(x,y,m)=>{x0=Math.min(x0,x-m);x1=Math.max(x1,x+m);y0=Math.min(y0,y-m);y1=Math.max(y1,y+m)};
+  rings.forEach(r=>{if(r.type==='bar'){ext(r.x1,r.y1,THICK);ext(r.x2,r.y2,THICK)}else ext(r.x,r.y,r.r+THICK)});
+  view.s=Math.min((W-28)/(x1-x0),(H-28)/(y1-y0),120);view.ox=W/2-(x0+x1)/2*view.s;view.oy=H/2-(y0+y1)/2*view.s;
+}
+const toWorld=e=>{const b=cv.getBoundingClientRect();return{x:(e.clientX-b.left-view.ox)/view.s,y:(e.clientY-b.top-view.oy)/view.s}};
+
+/* ---------- Ton ---------- */
+let actx=null;
+function tone(f0,f1,dur,type,vol){if(!save.sound)return;try{actx=actx||new(window.AudioContext||window.webkitAudioContext)();const t=actx.currentTime,o=actx.createOscillator(),g=actx.createGain();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+dur);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(g).connect(actx.destination);o.start(t);o.stop(t+dur)}catch(e){}}
+const sTick=()=>tone(1400,1100,.05,'square',.025),sPop=()=>tone(380,980,.16,'triangle',.12),sLock=()=>tone(180,120,.15,'sawtooth',.05),sBoom=()=>{tone(160,40,.6,'sawtooth',.2);tone(90,30,.7,'square',.12)};
+const buzz=ms=>{try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}};
+function sWin(){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,f*1.01,.22,'triangle',.1),i*110))}
+
+/* ---------- Spiellogik ---------- */
+function isFree(r){
+  if(!active(r)||r.anim||(drag&&drag.ring===r))return false;
+  return r.links.every(li=>{const L=links[li];return!active(other(L,r))||linkOpen(L)});
+}
+function checkFree(){
+  if(won||lost)return;const free=rings.filter(isFree);if(!free.length)return;
+  const t=now();
+  free.forEach(r=>{r.removing=t;let dx=r.x-center.x,dy=r.y-center.y,d=Math.hypot(dx,dy);if(d<0.2){dx=0;dy=-1;d=1}r.dir={x:dx/d,y:dy/d};burst(r.x,r.y,r.color,10);if(r.acorn){save.acorns++;burst(r.x,r.y,'#c8862a',8);persist()}});
+  hud();sPop();buzz(15);
+}
+function bombTick(){
+  if(won||lost)return;
+  for(const r of rings){if(!r.bomb||!active(r))continue;r.bomb--;if(r.bomb<=0){explode(r);return}}
+}
+function explode(r){
+  lost=true;r.shake=now();sBoom();buzz([60,40,120]);
+  for(let i=0;i<40;i++)burst(r.x,r.y,i%2?'#ff6b35':'#2b2b2b',1,true);
+  setTimeout(()=>show('#ovLose'),750);
+}
+function checkWin(){
+  if(won||lost||!rings.every(r=>r.removed))return;won=true;
+  const st=moves<=par?3:moves<=par+Math.ceil(rings.length/2)?2:1;
+  save.stars[level]=Math.max(save.stars[level]||0,st);save.max=Math.max(save.max,level+1);const bonus=st+tierNow*2;save.acorns+=bonus;persist();hud();
+  sWin();buzz([20,40,20]);for(let i=0;i<90;i++)burst(center.x,center.y,PALETTE[i%PALETTE.length],1,true);
+  setTimeout(()=>{$('#winStars').innerHTML=[1,2,3].map(i=>`<b class="${i<=st?'on':''}">★</b>`).join('');$('#winText').textContent=`${moves} Züge · Ziel für ★★★: ${par} · +${bonus} 🌰`;show('#ovWin')},700);
+}
+function linkStates(r){return r.links.map(li=>active(other(links[li],r))&&linkOpen(links[li]))}
+function feedback(r){const s=linkStates(r);if(r._st&&s.some((v,i)=>v&&!r._st[i])){sTick();buzz(6)}r._st=s}
+const snap=()=>({rot:rings.map(r=>r.rot),rem:rings.map(r=>r.removed||r.removing!==null),bomb:rings.map(r=>r.bomb),moves,acorns:save.acorns});
+function doUndo(){
+  if(won||!undo.length||rings.some(r=>r.anim))return;
+  const s=undo.pop();rings.forEach((r,i)=>{r.rot=s.rot[i];r.removed=s.rem[i];r.removing=null;r.bomb=s.bomb[i];r._st=null});
+  moves=s.moves;save.acorns=s.acorns;persist();lost=false;hint=null;hide('#ovLose');hud();sTick();
+}
+
+function computeHint(){
+  const act=rings.filter(active);
+  const blocked=r=>r.links.map(li=>links[li]).filter(L=>{const o=other(L,r);return active(o)&&!L.pts.some(p=>covers(o,angOn(L,o,p)))});
+  const nearest=(L,r)=>L.pts.map(p=>angOn(L,r,p)).sort((a,b)=>Math.abs(norm(a-r.rot))-Math.abs(norm(b-r.rot)))[0];
+  let best=null;
+  for(const r of act){if(r.locked)continue;const bl=blocked(r);if(bl.length===1){const a=nearest(bl[0],r),c=Math.abs(norm(a-r.rot))-(r.bomb?10:0);if(!best||c<best.c)best={ring:r,ang:a,c}}}
+  if(best)return best;
+  for(const r of act){if(!r.locked)continue;for(const L of blocked(r)){const o=other(L,r);if(!o.locked)return{ring:o,ang:nearest(L,o)}}}
+  const s=act.filter(r=>!r.locked).map(r=>[r,blocked(r)]).filter(x=>x[1].length).sort((a,b)=>(a[1].length-(a[0].bomb?5:0))-(b[1].length-(b[0].bomb?5:0)));
+  for(const[r,bl]of s)for(const L of bl){const o=other(L,r);if(!o.locked)return{ring:o,ang:nearest(L,o)}}
+  if(s.length)return{ring:s[0][0],ang:nearest(s[0][1][0],s[0][0])};
+  return null;
+}
+function showHint(quiet){const h=computeHint();if(!h)return false;hint={ring:h.ring,ang:h.ang};if(!quiet||level===1)toast('Dreh die Lücke des leuchtenden Rings auf den Punkt');return true}
+
+/* ---------- Eingabe ---------- */
+function pick(p){
+  let best=null,bd=0.34;
+  rings.forEach(r=>{if(!active(r))return;const e=r.type==='bar'?segDist(p,r)+0.04:Math.abs(Math.hypot(p.x-r.x,p.y-r.y)-r.r);if(e<bd){bd=e;best=r}});
+  if(best)return best;bd=1e9;
+  rings.forEach(r=>{if(!active(r)||r.type==='bar')return;const d=Math.hypot(p.x-r.x,p.y-r.y)/r.r;if(d<0.55&&d<bd){bd=d;best=r}});
+  return best;
+}
+cv.addEventListener('pointerdown',e=>{
+  if(won||lost||drag)return;const p=toWorld(e),r=pick(p);if(!r)return;
+  if(r.locked){r.shake=now();sLock();buzz(30);toast(r.type==='bar'?'Stäbe lassen sich nicht drehen – öffne ihre Klammern':'Gesperrt – richte die Lücken der Nachbarn auf diesen Ring');return}
+  if(r.anim){r.rot=r.anim.to;r.anim=null}
+  drag={ring:r,last:Math.atan2(p.y-r.y,p.x-r.x),total:0,sx:e.clientX,sy:e.clientY,moved:false,snap:snap()};r._st=linkStates(r);
+  try{cv.setPointerCapture(e.pointerId)}catch(err){}
+});
+cv.addEventListener('pointermove',e=>{
+  if(!drag)return;const r=drag.ring,p=toWorld(e),a=Math.atan2(p.y-r.y,p.x-r.x);
+  if(!drag.moved&&Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)>8){drag.moved=true;drag.last=a}
+  if(!drag.moved)return;
+  const da=norm(a-drag.last);drag.last=a;r.rot=norm(r.rot+da);drag.total+=Math.abs(da);feedback(r);
+});
+function endDrag(){
+  if(!drag)return;const r=drag.ring,d=drag;drag=null;
+  if(!d.moved){undo.push(d.snap);r.anim={from:r.rot,to:r.rot+STEP,t0:now(),dur:200};moves++;sTick()}
+  else if(d.total>0.05){undo.push(d.snap);moves++;checkFree();bombTick()}
+  if(undo.length>200)undo.shift();
+  hud();
+}
+cv.addEventListener('pointerup',endDrag);cv.addEventListener('pointercancel',endDrag);
+
+/* ---------- Zeichnen ---------- */
+function burst(x,y,c,n,big){for(let i=0;i<n;i++){const a=Math.random()*TAU,v=(big?0.06:0.03)+Math.random()*(big?0.12:0.05);particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-(big?0.08:0.02),c,life:1,size:big?0.12:0.08,rot:Math.random()*TAU,vr:(Math.random()-.5)*.4})}}
+const shk=r=>{const t=(now()-r.shake)/350;return t<1?Math.sin(t*40)*5*(1-t):0};
+function pos(r){return{x:view.ox+r.x*view.s+shk(r),y:view.oy+r.y*view.s}}
+function tube(path,r,w){
+  ctx.strokeStyle=r.dark;ctx.lineWidth=w+3;path();ctx.stroke();
+  ctx.strokeStyle=r.color;ctx.lineWidth=w;path();ctx.stroke();
+}
+function arc(r,a0,a1,cap,c,rad){
+  const w=THICK*view.s;rad=rad||r.r*view.s;c=c||pos(r);ctx.lineCap=cap;
+  tube(()=>{ctx.beginPath();ctx.arc(c.x,c.y,rad,a0,a1)},r,w);
+  ctx.beginPath();ctx.arc(c.x,c.y,rad-w*0.16,a0,a1);ctx.strokeStyle='rgba(255,255,255,.4)';ctx.lineWidth=w*0.24;ctx.stroke();
+}
+const fullRing=(r,c,rad)=>arc(r,r.rot+GAP,r.rot+TAU-GAP,'round',c,rad);
+function bar(r,off,k){
+  const s=view.s,w=THICK*s*1.1,o=off||{x:shk(r),y:0},sc=k||1,mx=view.ox+r.x*s+o.x,my=view.oy+r.y*s+o.y;
+  const P=(x,y)=>[mx+(x-r.x)*s*sc,my+(y-r.y)*s*sc],[ax,ay]=P(r.x1,r.y1),[bx,by]=P(r.x2,r.y2);
+  ctx.lineCap='round';tube(()=>{ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by)},r,w);
+  const nx=-(by-ay),ny=bx-ax,l=Math.hypot(nx,ny)||1;
+  ctx.beginPath();ctx.moveTo(ax+nx/l*w*0.18,ay+ny/l*w*0.18);ctx.lineTo(bx+nx/l*w*0.18,by+ny/l*w*0.18);ctx.strokeStyle='rgba(255,255,255,.45)';ctx.lineWidth=w*0.22;ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,.55)';[.3,.5,.7].forEach(t=>{ctx.beginPath();ctx.arc(ax+(bx-ax)*t,ay+(by-ay)*t,w*0.14,0,TAU);ctx.fill()});
+}
+function cap(r,a){
+  const c=pos(r),w=THICK*view.s,x=c.x+Math.cos(a)*r.r*view.s,y=c.y+Math.sin(a)*r.r*view.s;
+  ctx.fillStyle=r.dark;ctx.beginPath();ctx.arc(x,y,(w+3)/2,0,TAU);ctx.fill();
+  ctx.fillStyle=r.color;ctx.beginPath();ctx.arc(x,y,w/2,0,TAU);ctx.fill();
+}
+function seg(r,ang){
+  const d=0.24/r.r,rel=norm(ang-r.rot),lo=rel-d,hi=rel+d;
+  if(hi<=-GAP||lo>=GAP){arc(r,r.rot+lo,r.rot+hi,'butt');return}
+  // Ringende liegt im Bereich: zuerst die runde Kappe, dann das Stück darüber
+  if(lo<-GAP){cap(r,r.rot-GAP);arc(r,r.rot+lo,r.rot-GAP,'butt')}
+  if(hi>GAP){cap(r,r.rot+GAP);arc(r,r.rot+GAP,r.rot+hi,'butt')}
+}
+function clip(L){
+  const A=rings[L.a],B=rings[L.b],p=L.pts[0],s=view.s,open=linkOpen(L);
+  const x=view.ox+p.x*s,y=view.oy+p.y*s,ang=Math.atan2(B.y-A.y,B.x-A.x);
+  const src=[A,B].find(r=>r.type==='ring'&&!r.locked)||A,col=src.color;
+  ctx.save();ctx.translate(x,y);ctx.rotate(ang);ctx.globalAlpha=open?.4:1;
+  const lw=s*0.5,lh=s*0.3,rr=s*0.07;
+  ctx.fillStyle=col;ctx.strokeStyle=shade(col.startsWith('#')?col:'#888888',-0.35);ctx.lineWidth=2;
+  ctx.beginPath();ctx.roundRect?ctx.roundRect(-lw/2,-lh/2,lw,lh,rr):ctx.rect(-lw/2,-lh/2,lw,lh);ctx.fill();ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,.45)';ctx.fillRect(-lw/2+3,-lh/2+3,lw-6,lh*0.22);
+  ctx.strokeStyle='rgba(0,0,0,.18)';ctx.beginPath();ctx.moveTo(0,-lh/2+2);ctx.lineTo(0,lh/2-2);ctx.stroke();
+  ctx.restore();
+  if(open)glow(x,y);
+}
+function glow(x,y){const w=THICK*view.s;ctx.fillStyle='rgba(255,255,255,.35)';ctx.beginPath();ctx.arc(x,y,w*0.9,0,TAU);ctx.fill();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x,y,w*0.35,0,TAU);ctx.fill()}
+function badge(r,bg){const c=pos(r),s=view.s;ctx.fillStyle=bg;ctx.beginPath();ctx.arc(c.x,c.y,s*0.3,0,TAU);ctx.fill();return c}
+function lock(r){
+  const c=badge(r,'rgba(255,250,242,.95)'),s=view.s;ctx.save();ctx.translate(c.x,c.y);
+  ctx.strokeStyle='#6b6f76';ctx.lineWidth=s*0.05;ctx.beginPath();ctx.arc(0,-s*0.04,s*0.09,Math.PI,0);ctx.stroke();
+  ctx.fillStyle='#6b6f76';ctx.beginPath();ctx.roundRect?ctx.roundRect(-s*0.14,-s*0.04,s*0.28,s*0.2,s*0.04):ctx.rect(-s*0.14,-s*0.04,s*0.28,s*0.2);ctx.fill();
+  ctx.restore();
+}
+function bomb(r,t){
+  const s=view.s,c=pos(r),warn=r.bomb<=3,pu=warn?.5+.5*Math.sin(t/90):0;
+  ctx.fillStyle='rgba(43,43,43,1)';ctx.beginPath();ctx.arc(c.x,c.y+s*0.03,s*0.3*(1+pu*0.08),0,TAU);ctx.fill();
+  ctx.strokeStyle='#8a6a3a';ctx.lineWidth=s*0.04;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(c.x+s*0.17,c.y-s*0.2);ctx.quadraticCurveTo(c.x+s*0.26,c.y-s*0.36,c.x+s*0.36,c.y-s*0.33);ctx.stroke();
+  ctx.fillStyle=Math.sin(t/60)>0?'#ffd166':'#ff6b35';ctx.beginPath();ctx.arc(c.x+s*0.37,c.y-s*0.34,s*0.06,0,TAU);ctx.fill();
+  ctx.fillStyle=warn?`rgb(255,${Math.round(120-pu*80)},${Math.round(90-pu*60)})`:'#fff';ctx.font=`800 ${Math.round(s*0.3)}px "Baloo 2",system-ui,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(r.bomb,c.x,c.y+s*0.05);
+}
+function acorn(r){
+  const c=pos(r),s=view.s,a=r.rot+Math.PI,inC=r.acornIn&&!r.bomb&&!r.locked,x=inC?c.x:c.x+Math.cos(a)*r.r*s,y=inC?c.y+s*0.04:c.y+Math.sin(a)*r.r*s,k=s*(inC?0.2:0.17);
+  ctx.save();ctx.translate(x,y);ctx.fillStyle='#b5651d';ctx.strokeStyle='#6b3a10';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.ellipse(0,k*0.35,k*0.8,k,0,0,TAU);ctx.fill();ctx.stroke();
+  ctx.fillStyle='#7a4a1e';ctx.beginPath();ctx.ellipse(0,-k*0.45,k*1.0,k*0.5,0,0,TAU);ctx.fill();ctx.stroke();
+  ctx.strokeStyle='#5a3410';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,-k*0.9);ctx.lineTo(k*0.2,-k*1.35);ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,.35)';ctx.beginPath();ctx.ellipse(-k*0.3,k*0.2,k*0.18,k*0.4,0,0,TAU);ctx.fill();ctx.restore();
+}
+function draw(){
+  const t=now();
+  rings.forEach(r=>{
+    if(r.anim){const k=Math.min(1,(t-r.anim.t0)/r.anim.dur),e=1-Math.pow(1-k,3);r.rot=r.anim.from+(r.anim.to-r.anim.from)*e;feedback(r);if(k>=1){r.rot=norm(r.anim.to);r.anim=null;checkFree();bombTick()}}
+  });
+  let changed=false;rings.forEach(r=>{if(r.removing!==null&&t-r.removing>480){r.removing=null;r.removed=true;changed=true}});
+  if(changed){checkFree();checkWin()}
+  if(hint&&(!active(hint.ring)||covers(hint.ring,hint.ang)))hint=null;
+
+  ctx.setTransform(DPR,0,0,DPR,0,0);ctx.clearRect(0,0,W,H);
+  const s=view.s,w=THICK*s,act=rings.filter(active),rg=act.filter(r=>r.type==='ring'),bars=act.filter(r=>r.type==='bar');
+  ctx.lineCap='round';ctx.strokeStyle='rgba(110,60,15,.14)';ctx.lineWidth=w+4;
+  rg.forEach(r=>{const c=pos(r);ctx.beginPath();ctx.arc(c.x,c.y+4,r.r*s,r.rot+GAP,r.rot+TAU-GAP);ctx.stroke()});
+  bars.forEach(r=>{ctx.beginPath();ctx.moveTo(view.ox+r.x1*s,view.oy+r.y1*s+4);ctx.lineTo(view.ox+r.x2*s,view.oy+r.y2*s+4);ctx.stroke()});
+  if(hint){const c=pos(hint.ring),pu=.5+.5*Math.sin(t/180);ctx.strokeStyle=`rgba(255,200,40,${.35+.3*pu})`;ctx.lineWidth=w+10+8*pu;ctx.beginPath();ctx.arc(c.x,c.y,hint.ring.r*s,0,TAU);ctx.stroke()}
+  bars.forEach(r=>bar(r));
+  rg.forEach(r=>fullRing(r));
+  links.forEach(L=>{const A=rings[L.a],B=rings[L.b];if(!active(A)||!active(B)||L.pts.length<2)return;seg(A,L.pts[0].angA);seg(B,L.pts[1].angB)});
+  links.forEach(L=>{const A=rings[L.a],B=rings[L.b];if(!active(A)||!active(B))return;
+    if(L.pts.length===1){clip(L);return}
+    L.pts.forEach(p=>{if(covers(A,p.angA)||covers(B,p.angB))glow(view.ox+p.x*s,view.oy+p.y*s)})});
+  rg.forEach(r=>{if(r.acorn)acorn(r)});
+  rg.forEach(r=>{if(r.locked)lock(r);else if(r.bomb)bomb(r,t)});
+  if(hint){const c=pos(hint.ring),pu=.5+.5*Math.sin(t/150),x=c.x+Math.cos(hint.ang)*hint.ring.r*s,y=c.y+Math.sin(hint.ang)*hint.ring.r*s;
+    ctx.fillStyle='#fff';ctx.strokeStyle='#ffb703';ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,y,w*(0.7+0.35*pu),0,TAU);ctx.fill();ctx.stroke()}
+  rings.forEach(r=>{if(r.removing===null)return;const k=Math.min(1,(t-r.removing)/480),e=k*k,dx=r.dir.x*e*3.5*s,dy=r.dir.y*e*3.5*s-k*0.6*s;
+    ctx.globalAlpha=1-k;if(r.type==='bar')bar(r,{x:dx,y:dy},1+0.25*k);else{const c=pos(r);fullRing(r,{x:c.x+dx,y:c.y+dy},r.r*s*(1+0.25*k))}ctx.globalAlpha=1});
+  particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.006;p.rot+=p.vr;p.life-=0.016});
+  particles=particles.filter(p=>p.life>0);
+  particles.forEach(p=>{ctx.globalAlpha=Math.max(0,p.life);ctx.fillStyle=p.c;ctx.save();ctx.translate(view.ox+p.x*s,view.oy+p.y*s);ctx.rotate(p.rot);ctx.fillRect(-p.size*s/2,-p.size*s/4,p.size*s,p.size*s/2);ctx.restore()});
+  ctx.globalAlpha=1;
+  requestAnimationFrame(draw);
+}
+
+/* ---------- Oberfläche ---------- */
+let toastT=0;
+function toast(m,ms){const el=$('#toast');el.textContent=m;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),ms||2600)}
+const show=id=>$(id).classList.add('show'),hide=id=>$(id).classList.remove('show');
+function levels(){
+  const total=Math.ceil((save.max+1)/20)*20;let h='';
+  for(let i=1;i<=total;i++){const st=save.stars[i]||0;h+=`<button class="cell${i===level?' cur':''}${tier(i)?' t'+tier(i):''}" data-l="${i}" ${i>save.max?'disabled':''}>${i}<small>${'★'.repeat(st)}</small></button>`}
+  $('#lvGrid').innerHTML=h;show('#ovLevels');
+}
+$('#lvGrid').addEventListener('click',e=>{const b=e.target.closest('.cell');if(!b||b.disabled)return;hide('#ovLevels');hide('#ovStart');startLevel(+b.dataset.l)});
+$('#bLvClose').onclick=()=>hide('#ovLevels');
+$('#bLevels').onclick=levels;$('#bStartLevels').onclick=levels;
+$('#bHome').onclick=()=>{hud();show('#ovStart')};
+$('#bPlay').onclick=()=>{hide('#ovStart');if(!save.seenHelp)show('#ovHelp');tone(600,900,.08,'triangle',.06)};
+$('#bStartHelp').onclick=()=>show('#ovHelp');
+$('#bHelpOk').onclick=()=>{hide('#ovHelp');save.seenHelp=true;persist()};
+$('#bSound').onclick=()=>{save.sound=!save.sound;persist();hud();if(save.sound)sTick()};
+$('#bRestart').onclick=()=>startLevel(level);
+$('#bUndo').onclick=()=>{if(!undo.length){toast('Noch kein Zug zum Rückgängigmachen');return}doUndo()};
+$('#bHint').onclick=()=>{if(won||lost||hint)return;if(level>1&&save.acorns<5){toast('Nicht genug Eicheln – sammle sie auf den Ringen');return}if(showHint()&&level>1){save.acorns-=5;persist();hud()}};
+$('#bAgain').onclick=()=>{hide('#ovWin');startLevel(level)};
+$('#bNext').onclick=()=>{hide('#ovWin');startLevel(level+1)};
+$('#bLoseUndo').onclick=doUndo;
+$('#bLoseAgain').onclick=()=>{hide('#ovLose');startLevel(level)};
+new ResizeObserver(resize).observe($('#stage'));
+resize();
+startLevel(Math.min(save.level||1,save.max));
+requestAnimationFrame(draw);
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+// Display während des Spiels anlassen
+let wl=null;const keepAwake=async()=>{try{if('wakeLock' in navigator&&document.visibilityState==='visible')wl=await navigator.wakeLock.request('screen')}catch(e){}};
+document.addEventListener('visibilitychange',keepAwake);document.addEventListener('pointerdown',()=>{if(!wl)keepAwake()},{once:true});
+}
+</script>
+</body>
+</html>
