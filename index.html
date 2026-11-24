@@ -319,7 +319,7 @@ function startLevel(l){
   const nw=Object.keys(INTRO).find(k=>g.has[k]&&!save.seen[k]);
   if(nw){save.seen[nw]=1;persist();setTimeout(()=>toast(INTRO[nw],4200),400)}
   else if(tierNow)setTimeout(()=>toast(tierNow===2?'🔥 Super Hard Level!':'🔥 Hard Level!'),300);
-  if(l===1)setTimeout(()=>{if(level===1&&!won)showHint(true)},900);
+  if(l===1)setTimeout(()=>{if(level===1&&!won&&!$('#ovStart').classList.contains('show'))showHint(true)},900);
 }
 function hud(){
   $('#lvl').textContent=level;const tl=$('#tierLbl');tl.textContent=['Level','Hard','Super Hard'][tierNow];tl.className=tierNow?'t'+tierNow+'c':'';
@@ -542,7 +542,7 @@ $('#lvGrid').addEventListener('click',e=>{const b=e.target.closest('.cell');if(!
 $('#bLvClose').onclick=()=>hide('#ovLevels');
 $('#bLevels').onclick=levels;$('#bStartLevels').onclick=levels;
 $('#bHome').onclick=()=>{hud();show('#ovStart')};
-$('#bPlay').onclick=()=>{hide('#ovStart');if(!save.seenHelp)show('#ovHelp');tone(600,900,.08,'triangle',.06)};
+$('#bPlay').onclick=()=>{hide('#ovStart');if(level===1&&!won&&!hint)setTimeout(()=>showHint(true),700);if(!save.seenHelp)show('#ovHelp');tone(600,900,.08,'triangle',.06)};
 $('#bStartHelp').onclick=()=>show('#ovHelp');
 $('#bHelpOk').onclick=()=>{hide('#ovHelp');save.seenHelp=true;persist()};
 $('#bSound').onclick=()=>{save.sound=!save.sound;persist();hud();if(save.sound)sTick()};
