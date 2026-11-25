@@ -132,7 +132,7 @@ footer{display:flex;justify-content:center;gap:10px;padding:6px 12px 16px}
 <div class="overlay" id="ovHelp"><div class="panel">
   <h2>So geht's</h2>
   <ul>
-    <li><b>Antippen</b> dreht einen Ring um 30°, <b>Ziehen</b> dreht ihn frei.</li>
+    <li><b>Antippen</b> dreht einen Ring um 30°, <b>Ziehen</b> dreht ihn frei. Denselben Ring mehrmals hintereinander drehen zählt als <b>ein Zug</b>.</li>
     <li>Jeder Ring hat eine <b>Lücke</b>. Wo zwei Ringe verhakt sind, muss die Lücke eines der beiden genau auf dem Kreuzungspunkt liegen.</li>
     <li><b>Klammern</b> halten Ringe zusammen – dreh die Lücke auf die Klammer.</li>
     <li>Sind alle Verbindungen offen, <b>fliegt der Ring weg</b>. Ein heller Punkt zeigt eine offene Verbindung.</li>
@@ -239,6 +239,49 @@ function freeLayout(n,rnd){
   return rs;
 }
 const mk=(k,x,y,r,type)=>({id:k,type:type||'ring',x,y,r,rot:0,links:[],locked:type==='bar',removed:false,removing:null,anim:null,shake:-1e9,acorn:false,bomb:0});
+// Löser: spielt das Level mehrfach durch und liefert die kleinste gefundene Zugzahl (garantiert erreichbar)
+function solveMin(R,Ls,rnd,runs){
+  const rot0=R.map(r=>r.rot);let best=1e9;
+  const cov=(r,a)=>r.type==='ring'&&Math.abs(norm(a-r.rot))<OPEN;
+  const oth=(L,r)=>L.a===r.id?R[L.b]:R[L.a];
+  const aOn=(L,r,p)=>L.a===r.id?p.angA:p.angB;
+  const open=L=>L.pts.some(p=>cov(R[L.a],p.angA)||cov(R[L.b],p.angB));
+  for(let run=0;run<runs;run++){
+    R.forEach((r,i)=>{r.rot=rot0[i];r.gone=false});
+    const live=r=>r.links.map(i=>Ls[i]).filter(L=>!oth(L,r).gone);
+    const cascade=()=>{for(;;){const f=R.filter(r=>!r.gone&&live(r).every(open));if(!f.length)break;f.forEach(r=>r.gone=true)}};
+    // beste Lage für Ring rr, die Verbindung L öffnet und möglichst viele weitere geschlossene Verbindungen mitöffnet
+    const place=(rr,L)=>{
+      const own=L.pts.map(p=>aOn(L,rr,p)),others=[];
+      live(rr).forEach(M=>{if(M!==L&&!open(M))M.pts.forEach(p=>others.push(aOn(M,rr,p)))});
+      let bestA=own[0],bestN=-1;
+      own.forEach(a=>{const cands=[a];others.forEach(b=>{const d=norm(b-a);if(Math.abs(d)<2*OPEN-0.04)cands.push(a+d/2)});
+        cands.forEach(c=>{const n=others.filter(b=>Math.abs(norm(b-c))<OPEN-0.01).length;if(Math.abs(norm(a-c))<OPEN-0.01&&n>bestN){bestN=n;bestA=c}})});
+      rr.rot=norm(bestA);
+    };
+    let moves=0,guard=0;cascade();
+    while(R.some(r=>!r.gone)&&guard++<400&&moves<best){
+      const act=R.filter(r=>!r.gone),lk=act.filter(r=>r.locked);
+      let t;
+      if(lk.length)t=lk[Math.floor(rnd()*lk.length)];
+      else{const sc=act.map(r=>[r,live(r).filter(L=>!open(L)).length+(run?rnd()*1.6:0)]).sort((a,b)=>a[1]-b[1]);t=sc[0][0]}
+      let selfUsed=false;
+      const need=live(t).filter(L=>!open(L)).sort((a,b)=>(oth(b,t).locked?1:0)-(oth(a,t).locked?1:0));
+      for(const L of need){
+        if(open(L))continue;const o=oth(L,t);
+        let rr;
+        if(o.locked){if(selfUsed||t.locked)break;rr=t;selfUsed=true}
+        else if(!t.locked&&!selfUsed&&rnd()<0.35){rr=t;selfUsed=true}
+        else rr=o;
+        place(rr,L);moves++;
+      }
+      cascade();
+    }
+    if(R.every(r=>r.gone))best=Math.min(best,moves);
+  }
+  R.forEach((r,i)=>{r.rot=rot0[i];delete r.gone});
+  return best<1e9?best:Ls.length;
+}
 function generate(l){
   const rnd=rng(l*7919+13),tr=tier(l);
   let n=Math.min(3+Math.floor((l-1)*0.9)+tr*2,22);
@@ -297,12 +340,13 @@ function generate(l){
     r.rot=best;
   });
   const cx=rs.reduce((s,r)=>s+r.x,0)/rs.length,cy=rs.reduce((s,r)=>s+r.y,0)/rs.length;
-  return{rings:rs,links:ls,par:unl+1,center:{x:cx,y:cy},tier:tr,kind,
+  const par=solveMin(rs,ls,rng(l*31+7),60);rs.forEach(r=>{if(r.bomb)r.bomb=par+5+tr*0});
+  return{rings:rs,links:ls,par,center:{x:cx,y:cy},tier:tr,kind,
     has:{clip:kind==='clip',bar:rs.some(r=>r.type==='bar'),bomb:rs.some(r=>r.bomb),lock:rs.some(r=>r.type==='ring'&&r.locked)}};
 }
 
 /* ---------- Zustand ---------- */
-let tierNow=0,rings=[],links=[],level=1,moves=0,par=0,center={x:0,y:0},hint=null,drag=null,won=false,lost=false,particles=[],undo=[];
+let lastRing=null,tierNow=0,rings=[],links=[],level=1,moves=0,par=0,center={x:0,y:0},hint=null,drag=null,won=false,lost=false,particles=[],undo=[];
 const cv=$('#cv'),ctx=cv.getContext('2d');let W=0,H=0,DPR=1;const view={s:50,ox:0,oy:0};
 const active=r=>!r.removed&&r.removing===null;
 const other=(L,r)=>L.a===r.id?rings[L.b]:rings[L.a];
@@ -314,7 +358,7 @@ const INTRO={clip:'Neu: Klammern! Dreh eine Lücke auf die Klammer.',lock:'Neu: 
 function startLevel(l){
   level=l;save.level=l;persist();
   const g=generate(l);rings=g.rings;links=g.links;par=g.par;center=g.center;tierNow=g.tier;
-  moves=0;hint=null;drag=null;won=false;lost=false;particles=[];undo=[];
+  moves=0;lastRing=null;hint=null;drag=null;won=false;lost=false;particles=[];undo=[];
   fit();hud();
   const nw=Object.keys(INTRO).find(k=>g.has[k]&&!save.seen[k]);
   if(nw){save.seen[nw]=1;persist();setTimeout(()=>toast(INTRO[nw],4200),400)}
@@ -353,7 +397,7 @@ function checkFree(){
   if(won||lost)return;const free=rings.filter(isFree);if(!free.length)return;
   const t=now();
   free.forEach(r=>{r.removing=t;let dx=r.x-center.x,dy=r.y-center.y,d=Math.hypot(dx,dy);if(d<0.2){dx=0;dy=-1;d=1}r.dir={x:dx/d,y:dy/d};burst(r.x,r.y,r.color,10);if(r.acorn){save.acorns++;burst(r.x,r.y,'#c8862a',8);persist()}});
-  hud();sPop();buzz(15);
+  lastRing=null;hud();sPop();buzz(15);
 }
 function bombTick(){
   if(won||lost)return;
@@ -366,7 +410,7 @@ function explode(r){
 }
 function checkWin(){
   if(won||lost||!rings.every(r=>r.removed))return;won=true;
-  const st=moves<=par?3:moves<=par+Math.ceil(rings.length/2)?2:1;
+  const st=moves<=par?3:moves<=par+Math.ceil(par*0.3)?2:1;
   save.stars[level]=Math.max(save.stars[level]||0,st);save.max=Math.max(save.max,level+1);const bonus=st+tierNow*2;save.acorns+=bonus;persist();hud();
   sWin();buzz([20,40,20]);for(let i=0;i<90;i++)burst(center.x,center.y,PALETTE[i%PALETTE.length],1,true);
   setTimeout(()=>{$('#winStars').innerHTML=[1,2,3].map(i=>`<b class="${i<=st?'on':''}">★</b>`).join('');$('#winText').textContent=`${moves} Züge · Ziel für ★★★: ${par} · +${bonus} 🌰`;show('#ovWin')},700);
@@ -377,7 +421,7 @@ const snap=()=>({rot:rings.map(r=>r.rot),rem:rings.map(r=>r.removed||r.removing!
 function doUndo(){
   if(won||!undo.length||rings.some(r=>r.anim))return;
   const s=undo.pop();rings.forEach((r,i)=>{r.rot=s.rot[i];r.removed=s.rem[i];r.removing=null;r.bomb=s.bomb[i];r._st=null});
-  moves=s.moves;save.acorns=s.acorns;persist();lost=false;hint=null;hide('#ovLose');hud();sTick();
+  moves=s.moves;lastRing=null;save.acorns=s.acorns;persist();lost=false;hint=null;hide('#ovLose');hud();sTick();
 }
 
 function computeHint(){
@@ -418,8 +462,9 @@ cv.addEventListener('pointermove',e=>{
 });
 function endDrag(){
   if(!drag)return;const r=drag.ring,d=drag;drag=null;
-  if(!d.moved){undo.push(d.snap);r.anim={from:r.rot,to:r.rot+STEP,t0:now(),dur:200};moves++;sTick()}
-  else if(d.total>0.05){undo.push(d.snap);moves++;checkFree();bombTick()}
+  const count=()=>{if(lastRing!==r){moves++;lastRing=r;return true}return false};
+  if(!d.moved){undo.push(d.snap);r.anim={from:r.rot,to:r.rot+STEP,t0:now(),dur:200,move:count()};sTick()}
+  else if(d.total>0.05){undo.push(d.snap);const m=count();checkFree();if(m)bombTick()}
   if(undo.length>200)undo.shift();
   hud();
 }
@@ -498,7 +543,7 @@ function acorn(r){
 function draw(){
   const t=now();
   rings.forEach(r=>{
-    if(r.anim){const k=Math.min(1,(t-r.anim.t0)/r.anim.dur),e=1-Math.pow(1-k,3);r.rot=r.anim.from+(r.anim.to-r.anim.from)*e;feedback(r);if(k>=1){r.rot=norm(r.anim.to);r.anim=null;checkFree();bombTick()}}
+    if(r.anim){const k=Math.min(1,(t-r.anim.t0)/r.anim.dur),e=1-Math.pow(1-k,3);r.rot=r.anim.from+(r.anim.to-r.anim.from)*e;feedback(r);if(k>=1){const m=r.anim.move;r.rot=norm(r.anim.to);r.anim=null;checkFree();if(m)bombTick()}}
   });
   let changed=false;rings.forEach(r=>{if(r.removing!==null&&t-r.removing>480){r.removing=null;r.removed=true;changed=true}});
   if(changed){checkFree();checkWin()}
