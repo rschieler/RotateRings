@@ -21,27 +21,27 @@
    LAYOUT: Leiste oben mit Fortschritt, Brett in der Mitte, drei Knöpfe unten */
 :root{color-scheme:light;--bg1:#fdf3e4;--bg2:#f4dcbc;--ink:#5a3b1c;--card:#fffaf2;--go:#2ec27e;--goD:#1f8a59;--gold:#ffb703}
 *{box-sizing:border-box;min-width:0;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%;overflow:hidden;background:linear-gradient(180deg,var(--bg1),var(--bg2));font-family:"Baloo 2",ui-rounded,"SF Pro Rounded",system-ui,sans-serif;color:var(--ink);user-select:none;-webkit-user-select:none}
+html,body{margin:0;height:100%;overflow:hidden;background:linear-gradient(180deg,var(--bg1),var(--bg2));transition:background .6s;font-family:"Baloo 2",ui-rounded,"SF Pro Rounded",system-ui,sans-serif;color:var(--ink);user-select:none;-webkit-user-select:none}
 #app{position:fixed;inset:0;display:flex;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
 header{display:flex;align-items:center;gap:8px;padding:10px 12px 2px}
 .lvl{display:flex;flex-direction:column;align-items:center;line-height:1;font-weight:800;min-width:52px}
 .lvl small{font-size:13px;opacity:.65;font-weight:600;white-space:nowrap}
 .lvl span{font-size:26px}
-.pill{background:var(--card);border-radius:999px;padding:6px 12px;box-shadow:0 2px 0 rgba(90,59,28,.15);font-weight:800;font-size:16px;white-space:nowrap}
+.pill{color:#5a3b1c;background:var(--card);border-radius:999px;padding:6px 12px;box-shadow:0 2px 0 rgba(90,59,28,.15);font-weight:800;font-size:16px;white-space:nowrap}
 .pill small{font-weight:600;opacity:.65}
 .spacer{flex:1}
 button{font:inherit;color:var(--ink);cursor:pointer}
-.icon{border:0;background:var(--card);width:44px;height:44px;border-radius:14px;font-size:20px;font-weight:800;box-shadow:0 3px 0 rgba(90,59,28,.18);display:grid;place-items:center;flex:none}
+.icon{color:#5a3b1c;border:0;background:var(--card);width:44px;height:44px;border-radius:14px;font-size:20px;font-weight:800;box-shadow:0 3px 0 rgba(90,59,28,.18);display:grid;place-items:center;flex:none}
 .icon:active,.big:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(90,59,28,.2)}
 .icon svg{width:22px;height:22px}
 #prog{display:flex;gap:3px;padding:6px 16px 0;height:16px}
-#prog i{flex:1;border-radius:4px;background:rgba(90,59,28,.13);transition:background .3s}
+#prog i{flex:1;border-radius:4px;background:rgba(128,110,90,.22);transition:background .3s}
 #prog i.on{background:var(--go)}
 #stage{flex:1;position:relative;touch-action:none}
 canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 footer{display:flex;justify-content:center;gap:10px;padding:6px 12px 16px}
-.big{border:0;border-radius:18px;padding:10px 18px;min-height:50px;font-weight:800;font-size:18px;background:var(--card);box-shadow:0 4px 0 rgba(90,59,28,.2);display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
-.big.go{background:var(--go);color:#fff;box-shadow:0 4px 0 var(--goD)}
+.big{color:#5a3b1c;border:0;border-radius:18px;padding:10px 18px;min-height:50px;font-weight:800;font-size:18px;background:var(--card);box-shadow:0 4px 0 rgba(90,59,28,.2);display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.big.go{background:var(--go);color:#fff!important;box-shadow:0 4px 0 var(--goD)}
 .big small{opacity:.85;font-weight:600}
 .big:focus-visible,.icon:focus-visible,.cell:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 #toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:rgba(60,35,10,.9);color:#fff;padding:8px 16px;border-radius:14px;font-size:15px;font-weight:600;opacity:0;transition:.25s;pointer-events:none;max-width:90vw;text-align:center;z-index:20}
@@ -76,6 +76,7 @@ footer{display:flex;justify-content:center;gap:10px;padding:6px 12px 16px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .start .big{width:min(280px,100%);font-size:20px;min-height:56px}
 .startrow{display:flex;gap:10px;width:min(280px,100%)}.startrow .big{flex:1;font-size:17px}
+body.dark{--ink:#f3ead9}
 @media (prefers-reduced-motion:reduce){.panel,.mascot,.deco{animation:none}}
 </style>
 </head>
@@ -134,12 +135,14 @@ footer{display:flex;justify-content:center;gap:10px;padding:6px 12px 16px}
   <ul>
     <li><b>Antippen</b> dreht einen Ring um 30°, <b>Ziehen</b> dreht ihn frei. Denselben Ring mehrmals hintereinander drehen zählt als <b>ein Zug</b>.</li>
     <li>Jeder Ring hat eine <b>Lücke</b>. Wo zwei Ringe verhakt sind, muss die Lücke eines der beiden genau auf dem Kreuzungspunkt liegen.</li>
+    <li>Beim Loslassen <b>rastet</b> die Lücke auf einer nahen Verbindung ein – oder genau zwischen zwei nahen Verbindungen, dann öffnet sie beide.</li>
+    <li><b>Zwillinge</b> (Kettensymbol) drehen sich gemeinsam.</li>
     <li><b>Klammern</b> halten Ringe zusammen – dreh die Lücke auf die Klammer.</li>
     <li>Sind alle Verbindungen offen, <b>fliegt der Ring weg</b>. Ein heller Punkt zeigt eine offene Verbindung.</li>
     <li>Graue Ringe mit <b>Schloss</b> und <b>Stäbe</b> lassen sich nicht drehen – die Nachbarn müssen ihre Lücken auf sie richten.</li>
     <li><b>💣 Bomben</b> zählen bei jedem Zug herunter. Löse den Ring, bevor sie bei 0 explodiert.</li>
     <li>Ringe mit <b>Eichel</b> bringen 🌰. Ein Tipp kostet 5 🌰. <b>↶ Zurück</b> macht einen Zug rückgängig.</li>
-    <li>Wenig Züge = ★★★. Jedes 5. Level ist <b>Hard</b>, jedes 10. <b>Super Hard</b>.</li>
+    <li>Das <b>Ziel</b> ist die kleinste Zugzahl, die der Löser findet – der Tipp führt genau diesen Weg. Ziel erreicht = ★★★. Alle 10 Levels beginnt eine neue <b>Welt</b>; jedes 5. Level ist <b>Hard</b>, jedes 10. <b>Super Hard</b>.</li>
   </ul>
   <div class="row"><button class="big go" id="bHelpOk">Los geht's</button></div>
 </div></div>
@@ -239,81 +242,128 @@ function freeLayout(n,rnd){
   return rs;
 }
 const mk=(k,x,y,r,type)=>({id:k,type:type||'ring',x,y,r,rot:0,links:[],locked:type==='bar',removed:false,removing:null,anim:null,shake:-1e9,acorn:false,bomb:0});
-// Löser: spielt das Level mehrfach durch und liefert die kleinste gefundene Zugzahl (garantiert erreichbar)
-function solveMin(R,Ls,rnd,runs){
-  const rot0=R.map(r=>r.rot);let best=1e9;
+// Löser: spielt das Level mehrfach durch (gleiche Regeln wie das Spiel) und liefert den besten Plan
+function solvePlan(R,Ls,rnd,runs,goneInit){
+  const rot0=R.map(r=>r.rot);let best=1e9,bestLog=[];
   const cov=(r,a)=>r.type==='ring'&&Math.abs(norm(a-r.rot))<OPEN;
   const oth=(L,r)=>L.a===r.id?R[L.b]:R[L.a];
   const aOn=(L,r,p)=>L.a===r.id?p.angA:p.angB;
   const open=L=>L.pts.some(p=>cov(R[L.a],p.angA)||cov(R[L.b],p.angB));
   for(let run=0;run<runs;run++){
-    R.forEach((r,i)=>{r.rot=rot0[i];r.gone=false});
+    R.forEach((r,i)=>{r.rot=rot0[i];r.gone=goneInit(r)});
     const live=r=>r.links.map(i=>Ls[i]).filter(L=>!oth(L,r).gone);
-    const cascade=()=>{for(;;){const f=R.filter(r=>!r.gone&&live(r).every(open));if(!f.length)break;f.forEach(r=>r.gone=true)}};
-    // beste Lage für Ring rr, die Verbindung L öffnet und möglichst viele weitere geschlossene Verbindungen mitöffnet
+    const cascade=()=>{let any=false;for(;;){const f=R.filter(r=>!r.gone&&live(r).every(open));if(!f.length)break;f.forEach(r=>r.gone=true);any=true}return any};
+    const turn=(rr,a)=>{const d=norm(a-rr.rot);rr.rot=norm(rr.rot+d);if(rr.twin!=null){const t=R[rr.twin];if(!t.gone)t.rot=norm(t.rot+d)}};
     const place=(rr,L)=>{
       const own=L.pts.map(p=>aOn(L,rr,p)),others=[];
       live(rr).forEach(M=>{if(M!==L&&!open(M))M.pts.forEach(p=>others.push(aOn(M,rr,p)))});
       let bestA=own[0],bestN=-1;
       own.forEach(a=>{const cands=[a];others.forEach(b=>{const d=norm(b-a);if(Math.abs(d)<2*OPEN-0.04)cands.push(a+d/2)});
         cands.forEach(c=>{const n=others.filter(b=>Math.abs(norm(b-c))<OPEN-0.01).length;if(Math.abs(norm(a-c))<OPEN-0.01&&n>bestN){bestN=n;bestA=c}})});
-      rr.rot=norm(bestA);
+      turn(rr,bestA);
     };
-    let moves=0,guard=0;cascade();
+    let moves=0,guard=0,last=null;const log=[];cascade();
     while(R.some(r=>!r.gone)&&guard++<400&&moves<best){
       const act=R.filter(r=>!r.gone),lk=act.filter(r=>r.locked);
       let t;
       if(lk.length)t=lk[Math.floor(rnd()*lk.length)];
       else{const sc=act.map(r=>[r,live(r).filter(L=>!open(L)).length+(run?rnd()*1.6:0)]).sort((a,b)=>a[1]-b[1]);t=sc[0][0]}
-      let selfUsed=false;
+      let selfUsed=false,did=false;
       const need=live(t).filter(L=>!open(L)).sort((a,b)=>(oth(b,t).locked?1:0)-(oth(a,t).locked?1:0));
       for(const L of need){
-        if(open(L))continue;const o=oth(L,t);
+        if(t.gone)break;const o=oth(L,t);if(o.gone||open(L))continue;
         let rr;
         if(o.locked){if(selfUsed||t.locked)break;rr=t;selfUsed=true}
         else if(!t.locked&&!selfUsed&&rnd()<0.35){rr=t;selfUsed=true}
         else rr=o;
-        place(rr,L);moves++;
+        place(rr,L);log.push([rr.id,rr.rot]);did=true;
+        if(last!==rr){moves++;last=rr}
+        if(cascade())last=null;
       }
-      cascade();
+      if(!did&&!cascade())break;
     }
-    if(R.every(r=>r.gone))best=Math.min(best,moves);
+    if(R.every(r=>r.gone)&&moves<best){best=moves;bestLog=log}
   }
   R.forEach((r,i)=>{r.rot=rot0[i];delete r.gone});
-  return best<1e9?best:Ls.length;
+  return{n:best<1e9?best:Ls.length,log:bestLog,ok:best<1e9};
 }
+// Welten und Bauarten: jede Welt (10 Levels) mischt die Bauarten neu
+const WORLDS=[{n:'Strand',b1:'#fdf3e4',b2:'#f4dcbc'},{n:'Wiese',b1:'#f3f9e6',b2:'#d4e9b4'},{n:'Wald',b1:'#e8f1e2',b2:'#b9d3ab'},{n:'Berge',b1:'#eef2f7',b2:'#c6d3e2'},{n:'Abendrot',b1:'#fde9df',b2:'#f2bfa8'},{n:'Nacht',b1:'#2c3456',b2:'#141a30',dark:1},{n:'Schnee',b1:'#f8fbff',b2:'#d8e6f4'}];
+const worldOf=l=>WORLDS[Math.floor((l-1)/10)%WORLDS.length];
+const MASKS={
+  Kreuz:['..#..','..#..','#####','..#..','..#..'],
+  Raute:['..#..','.###.','#####','.###.','..#..'],
+  Rahmen:['#####','#...#','#...#','#...#','#####'],
+  H:['#...#','#...#','#####','#...#','#...#'],
+  U:['#...#','#...#','#...#','#####'],
+  Pyramide:['..#..','.###.','#####'],
+  Herz:['.#.#.','#####','#####','.###.','..#..'],
+  Baum:['..#..','.###.','#####','..#..','.###.'],
+  Brille:['##.##','#####','##.##'],
+  Treppe:['#....','##...','.##..','..##.','...##','....#'],
+  T:['#####','..#..','..#..','..#..'],
+  Leiter:['.#.#.','.###.','.#.#.','.###.','.#.#.'],
+  Block:['.###.','.###.','.###.','.###.'],
+  Schlange:['####.','...#.','.###.','.#...','.####'],
+  Gitter:['#####','#.#.#','#####','#.#.#','#####'],
+  Turm:['#...#','#####','.#.#.','.###.','.#.#.','#####']
+};
+const RECIPES=['blob','form','clip','clipform','frei','stern','form','frei','clipwabe','blob'];
+function recipeOf(l){
+  if(l===1||l===3)return'blob';if(l===2)return'clip';
+  const w=Math.floor((l-1)/10),r=rng(w*977+31),list=RECIPES.slice();
+  for(let i=list.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[list[i],list[j]]=[list[j],list[i]]}
+  const k=list[(l-1)%10];return k==='stern'&&l<6?'form':k;
+}
+function maskCells(m,cand,rows){const off=Math.floor((rows-m.length)/2),out=[];m.forEach((row,r)=>[...row].forEach((ch,c)=>{if(ch==='#')out.push((r+off)*5+c)}));return out}
 function generate(l){
-  const rnd=rng(l*7919+13),tr=tier(l);
-  let n=Math.min(3+Math.floor((l-1)*0.9)+tr*2,22);
-  const kind=l===2?'clip':l<=3?'square':['square','clip','free','square','clip','free'][l%6];
-  const ex=l<4?0:l<10?1.5:3;
+  const rnd=rng(l*7919+13),tr=tier(l),recipe=recipeOf(l);
+  let n=l<=20?Math.min(3+Math.floor((l-1)*0.9)+tr*2,22):Math.min(10+Math.floor(rnd()*11)+tr*2,22);
   const rs=[],ls=[];
   const addLink=(a,b,pts)=>{rs[a].links.push(ls.length);rs[b].links.push(ls.length);ls.push({a,b,pts})};
-  if(kind==='clip'){
-    n=Math.min(n,15);
-    const cand=candidates(l%2?'hex':'square',DC,7),cells=grow(cand,n,rnd,l>=6?0:1);
+  const pickMask=()=>{const names=Object.keys(MASKS),sz=k=>MASKS[k].join('').split('#').length-1;
+    let ok=names.filter(k=>Math.abs(sz(k)-n)<=4);if(!ok.length)ok=names.slice().sort((x,y)=>Math.abs(sz(x)-n)-Math.abs(sz(y)-n)).slice(0,2);
+    return MASKS[ok[Math.floor(rnd()*ok.length)]]};
+  const isClip=recipe==='clip'||recipe==='clipform'||recipe==='clipwabe';
+  if(isClip){
+    let cand,cells;
+    if(recipe==='clipwabe'){cand=candidates('hex',DC,7);cells=grow(cand,Math.min(n,15),rnd,l>=6?0:1)}
+    else{cand=candidates('square',DC,6);cells=recipe==='clipform'?maskCells(pickMask(),cand,6):grow(cand,Math.min(n,15),rnd,l>=6?0:1)}
     const isBar=new Set();
     if(l>=6){
       const inSet=new Set(cells);
       const ok=i=>{const nb=cand[i].nb.filter(j=>inSet.has(j));if(nb.length!==2)return false;const a=cand[nb[0]],b=cand[nb[1]];return Math.abs(a.x+b.x-2*cand[i].x)<1e-6&&Math.abs(a.y+b.y-2*cand[i].y)<1e-6&&!nb.some(j=>isBar.has(j))};
-      cells.forEach(i=>{if(isBar.has(i)||!ok(i)||rnd()>0.8)return;const m=cand[i].mirror;isBar.add(i);if(m!==i&&m>=0){if(ok(m))isBar.add(m);else isBar.delete(i)}});
+      cells.forEach(i=>{if(isBar.has(i)||!ok(i)||rnd()>0.8)return;const m=cand[i].mirror;isBar.add(i);if(m!==i&&m>=0){if(inSet.has(m)&&ok(m))isBar.add(m);else isBar.delete(i)}});
     }
     const map=new Map();
     cells.forEach(ci=>{const k=rs.length;map.set(ci,k);rs.push(mk(k,cand[ci].x,cand[ci].y,1,isBar.has(ci)?'bar':'ring'))});
-    // Stäbe: Endpunkte an den Nachbarringen
     cells.forEach(ci=>{if(!isBar.has(ci))return;const b=rs[map.get(ci)],nb=cand[ci].nb.filter(j=>map.has(j)).map(j=>rs[map.get(j)]);
       const[p,q]=nb;const ux=(q.x-p.x)/Math.hypot(q.x-p.x,q.y-p.y),uy=(q.y-p.y)/Math.hypot(q.x-p.x,q.y-p.y);
-      b.x1=p.x+ux;b.y1=p.y+uy;b.x2=q.x-ux;b.y2=q.y-uy;b.nbIds=[p.id,q.id]});
+      b.x1=p.x+ux;b.y1=p.y+uy;b.x2=q.x-ux;b.y2=q.y-uy});
     cells.forEach(ci=>{const a=map.get(ci);cand[ci].nb.forEach(j=>{if(!map.has(j))return;const b=map.get(j);if(b<=a)return;
-      const A=rs[a],B=rs[b];const d=Math.hypot(B.x-A.x,B.y-A.y),ux=(B.x-A.x)/d,uy=(B.y-A.y)/d;
+      const A=rs[a],B=rs[b];if(A.type==='bar'&&B.type==='bar')return;const d=Math.hypot(B.x-A.x,B.y-A.y),ux=(B.x-A.x)/d,uy=(B.y-A.y)/d;
       const R0=A.type==='ring'?A:B,sg=A.type==='ring'?1:-1;
       const both=A.type==='ring'&&B.type==='ring',x=both?(A.x+B.x)/2:R0.x+ux*sg,y=both?(A.y+B.y)/2:R0.y+uy*sg;
       addLink(a,b,[{x,y,angA:Math.atan2(uy,ux),angB:Math.atan2(-uy,-ux)}])})});
+  }else if(recipe==='stern'){
+    // Stern: Mittelring, Stäbe als Speichen, aussen Ringe (bei grösseren Levels mit zweitem Ring)
+    const k=n<10?4:n<15?5:6,chain=n>=13&&k<=5,BL=1.25;
+    rs.push(mk(0,0,0,1));
+    for(let i=0;i<k;i++){
+      const a=-Math.PI/2+i*TAU/k,ux=Math.cos(a),uy=Math.sin(a),O={x:ux*(2+BL),y:uy*(2+BL)};
+      const outer=mk(rs.length,O.x,O.y,1);rs.push(outer);
+      const bar=mk(rs.length,ux*(1+BL/2),uy*(1+BL/2),1,'bar');bar.x1=ux;bar.y1=uy;bar.x2=O.x-ux;bar.y2=O.y-uy;rs.push(bar);
+      addLink(0,bar.id,[{x:ux,y:uy,angA:a,angB:0}]);
+      addLink(outer.id,bar.id,[{x:O.x-ux,y:O.y-uy,angA:norm(a+Math.PI),angB:0}]);
+      if(chain){const Q=mk(rs.length,O.x+ux*DC,O.y+uy*DC,1);rs.push(Q);addLink(outer.id,Q.id,[{x:O.x+ux*DC/2,y:O.y+uy*DC/2,angA:a,angB:norm(a+Math.PI)}])}
+    }
   }else{
-    const c=candidates('square',D,6),pts=kind==='free'?freeLayout(n,rnd):grow(c,n,rnd,ex).map(i=>({x:c[i].x,y:c[i].y,r:1}));
+    const c=candidates('square',D,6);
+    const pts=recipe==='frei'?freeLayout(n,rnd):(recipe==='form'?maskCells(pickMask(),c,6):grow(c,n,rnd,l<4?0:l<10?1.5:3)).map(i=>({x:c[i].x,y:c[i].y,r:1}));
     pts.forEach((p,k)=>rs.push(mk(k,p.x,p.y,p.r)));
     for(let a=0;a<rs.length;a++)for(let b=a+1;b<rs.length;b++)if(rel(rs[a],rs[b])===1)addLink(a,b,crossings(rs[a],rs[b]));
   }
+  const kind=isClip||recipe==='stern'?'clip':recipe;
   const nbOf=r=>r.links.map(li=>ls[li].a===r.id?rs[ls[li].b]:rs[ls[li].a]);
   const order=()=>rs.map(r=>r).sort(()=>rnd()-.5);
   // Schlösser
@@ -325,13 +375,23 @@ function generate(l){
   order().forEach(r=>{if(r.type==='bar'){r.color=BARC;return}if(r.locked){r.color=LOCKC;return}const used=new Set(nbOf(r).map(o=>o.color));const opt=PALETTE.filter(p=>!used.has(p));r.color=opt[Math.floor(rnd()*opt.length)]||PALETTE[0]});
   rs.forEach(r=>{r.dark=shade(r.color,-0.3)});
   const rings=rs.filter(r=>r.type==='ring');
+  // Zwillinge: zwei Ringe mit Kettensymbol drehen sich gemeinsam (ab Level 21)
+  if(l>=21&&recipe!=='stern'&&rnd()<0.6){
+    let pairs=l>=41?2:1;
+    for(let t=0;t<40&&pairs;t++){
+      const pool=rings.filter(r=>!r.locked&&r.links.length&&r.twin==null);if(pool.length<2)break;
+      const A=pool[Math.floor(rnd()*pool.length)],nb=new Set(nbOf(A).map(o=>o.id));
+      const cand=pool.filter(r=>r!==A&&!nb.has(r.id));if(!cand.length)continue;
+      const B=cand[Math.floor(rnd()*cand.length)];A.twin=B.id;B.twin=A.id;A.tw=B.tw=pairs;B.color=A.color;B.dark=A.dark;pairs--;
+    }
+  }
   // Eicheln
   rings.slice().sort(()=>rnd()-.5).slice(0,Math.max(1,Math.floor(rings.length/4))).forEach(r=>r.acorn=true);
   // Eichel in die Ringmitte, wenn dort Platz ist
-  rings.forEach(r=>{r.acornIn=rs.every(o=>{if(o===r)return true;if(o.type==='bar')return segDist(r,o)>0.5;return Math.abs(Math.hypot(r.x-o.x,r.y-o.y)-o.r)>0.5})});
+  rings.forEach(r=>{r.acornIn=r.twin==null&&rs.every(o=>{if(o===r)return true;if(o.type==='bar')return segDist(r,o)>0.5;return Math.abs(Math.hypot(r.x-o.x,r.y-o.y)-o.r)>0.5})});
   // Bomben
   const unl=rings.filter(r=>!r.locked).length;
-  if(l>=8&&l%4===3){let k=1+(tr?1:0);for(const r of order()){if(!k)break;if(r.type!=='ring'||r.locked||!r.links.length)continue;r.bomb=unl+6;k--}}
+  if(l>=8&&l%4===3){let k=1+(tr?1:0);for(const r of order()){if(!k)break;if(r.type!=='ring'||r.locked||r.twin!=null||!r.links.length)continue;r.bomb=unl+6;k--}}
   // Startlage der Lücken: keine Verbindung offen
   rings.forEach(r=>{
     const angs=[];r.links.forEach(li=>{const L=ls[li];L.pts.forEach(p=>angs.push(L.a===r.id?p.angA:p.angB))});
@@ -340,35 +400,39 @@ function generate(l){
     r.rot=best;
   });
   const cx=rs.reduce((s,r)=>s+r.x,0)/rs.length,cy=rs.reduce((s,r)=>s+r.y,0)/rs.length;
-  const par=solveMin(rs,ls,rng(l*31+7),60);rs.forEach(r=>{if(r.bomb)r.bomb=par+5+tr*0});
-  return{rings:rs,links:ls,par,center:{x:cx,y:cy},tier:tr,kind,
-    has:{clip:kind==='clip',bar:rs.some(r=>r.type==='bar'),bomb:rs.some(r=>r.bomb),lock:rs.some(r=>r.type==='ring'&&r.locked)}};
+  let sol=solvePlan(rs,ls,rng(l*31+7),80,()=>false);
+  if(!sol.ok&&rs.some(r=>r.twin!=null)){rs.forEach(r=>{if(r.twin!=null){r.twin=null;delete r.tw;r.acornIn=false}});sol=solvePlan(rs,ls,rng(l*31+7),80,()=>false)}
+  const par=sol.n;rs.forEach(r=>{if(r.bomb)r.bomb=par+5});
+  return{rings:rs,links:ls,par,plan:sol.log,center:{x:cx,y:cy},tier:tr,kind,recipe,
+    has:{clip:kind==='clip',bar:rs.some(r=>r.type==='bar'),bomb:rs.some(r=>r.bomb),lock:rs.some(r=>r.type==='ring'&&r.locked),twin:rs.some(r=>r.twin!=null)}};
 }
 
 /* ---------- Zustand ---------- */
-let lastRing=null,tierNow=0,rings=[],links=[],level=1,moves=0,par=0,center={x:0,y:0},hint=null,drag=null,won=false,lost=false,particles=[],undo=[];
+let plan=null,lastRing=null,tierNow=0,rings=[],links=[],level=1,moves=0,par=0,center={x:0,y:0},hint=null,drag=null,won=false,lost=false,particles=[],undo=[];
 const cv=$('#cv'),ctx=cv.getContext('2d');let W=0,H=0,DPR=1;const view={s:50,ox:0,oy:0};
 const active=r=>!r.removed&&r.removing===null;
 const other=(L,r)=>L.a===r.id?rings[L.b]:rings[L.a];
 const angOn=(L,r,p)=>L.a===r.id?p.angA:p.angB;
 const covers=(r,a)=>r.type==='ring'&&Math.abs(norm(a-r.rot))<OPEN;
 const linkOpen=L=>L.pts.some(p=>covers(rings[L.a],p.angA)||covers(rings[L.b],p.angB));
-const INTRO={clip:'Neu: Klammern! Dreh eine Lücke auf die Klammer.',lock:'Neu: Schlösser! Richte die Lücken der Nachbarn auf den grauen Ring.',bar:'Neu: Stäbe! Sie lösen sich, wenn beide Klammern offen sind.',bomb:'Achtung Bombe! Löse den Ring, bevor der Zähler 0 erreicht.'};
+const INTRO={clip:'Neu: Klammern! Dreh eine Lücke auf die Klammer.',lock:'Neu: Schlösser! Richte die Lücken der Nachbarn auf den grauen Ring.',bar:'Neu: Stäbe! Sie lösen sich, wenn beide Klammern offen sind.',twin:'Neu: Zwillinge! Ringe mit Kettensymbol drehen sich gemeinsam.',bomb:'Achtung Bombe! Löse den Ring, bevor der Zähler 0 erreicht.'};
 
 function startLevel(l){
   level=l;save.level=l;persist();
-  const g=generate(l);rings=g.rings;links=g.links;par=g.par;center=g.center;tierNow=g.tier;
+  const g=generate(l);rings=g.rings;links=g.links;par=g.par;center=g.center;tierNow=g.tier;plan={steps:g.plan,i:0};
+  const w=worldOf(l),rs=document.documentElement.style;rs.setProperty('--bg1',w.b1);rs.setProperty('--bg2',w.b2);document.body.classList.toggle('dark',!!w.dark);
   moves=0;lastRing=null;hint=null;drag=null;won=false;lost=false;particles=[];undo=[];
   fit();hud();
   const nw=Object.keys(INTRO).find(k=>g.has[k]&&!save.seen[k]);
   if(nw){save.seen[nw]=1;persist();setTimeout(()=>toast(INTRO[nw],4200),400)}
   else if(tierNow)setTimeout(()=>toast(tierNow===2?'🔥 Super Hard Level!':'🔥 Hard Level!'),300);
+  else if(l%10===1&&l>1)setTimeout(()=>toast('Neue Welt: '+worldOf(l).n),300);
   if(l===1)setTimeout(()=>{if(level===1&&!won&&!$('#ovStart').classList.contains('show'))showHint(true)},900);
 }
 function hud(){
-  $('#lvl').textContent=level;const tl=$('#tierLbl');tl.textContent=['Level','Hard','Super Hard'][tierNow];tl.className=tierNow?'t'+tierNow+'c':'';
+  $('#lvl').textContent=level;const tl=$('#tierLbl');tl.textContent=tierNow?['','Hard','Super Hard'][tierNow]:worldOf(level).n;tl.className=tierNow?'t'+tierNow+'c':'';
   $('#acorns').textContent='🌰 '+save.acorns;$('#moves').innerHTML=`Züge ${moves} <small>· Ziel ${par}</small>`;
-  $('#bSound').textContent=save.sound?'🔊 Ton an':'🔇 Ton aus';$('#startLvl').textContent='· Level '+level;$('#startAcorns').textContent='🌰 '+save.acorns;
+  $('#bSound').textContent=save.sound?'🔊 Ton an':'🔇 Ton aus';$('#startLvl').textContent='· Level '+level+' · '+worldOf(level).n;$('#startAcorns').textContent='🌰 '+save.acorns;
   const pr=$('#prog');if(pr.children.length!==rings.length)pr.innerHTML=rings.map(()=>'<i></i>').join('');
   const done=rings.filter(r=>r.removed||r.removing!==null).length;[...pr.children].forEach((e,i)=>e.classList.toggle('on',i<done));
 }
@@ -421,21 +485,40 @@ const snap=()=>({rot:rings.map(r=>r.rot),rem:rings.map(r=>r.removed||r.removing!
 function doUndo(){
   if(won||!undo.length||rings.some(r=>r.anim))return;
   const s=undo.pop();rings.forEach((r,i)=>{r.rot=s.rot[i];r.removed=s.rem[i];r.removing=null;r.bomb=s.bomb[i];r._st=null});
-  moves=s.moves;lastRing=null;save.acorns=s.acorns;persist();lost=false;hint=null;hide('#ovLose');hud();sTick();
+  moves=s.moves;lastRing=null;plan=null;save.acorns=s.acorns;persist();lost=false;hint=null;hide('#ovLose');hud();sTick();
 }
 
+// Tipp: nächster Schritt des besten Plans; weicht der Spieler ab, wird ab der aktuellen Lage neu geplant
 function computeHint(){
-  const act=rings.filter(active);
-  const blocked=r=>r.links.map(li=>links[li]).filter(L=>{const o=other(L,r);return active(o)&&!L.pts.some(p=>covers(o,angOn(L,o,p)))});
-  const nearest=(L,r)=>L.pts.map(p=>angOn(L,r,p)).sort((a,b)=>Math.abs(norm(a-r.rot))-Math.abs(norm(b-r.rot)))[0];
-  let best=null;
-  for(const r of act){if(r.locked)continue;const bl=blocked(r);if(bl.length===1){const a=nearest(bl[0],r),c=Math.abs(norm(a-r.rot))-(r.bomb?10:0);if(!best||c<best.c)best={ring:r,ang:a,c}}}
-  if(best)return best;
-  for(const r of act){if(!r.locked)continue;for(const L of blocked(r)){const o=other(L,r);if(!o.locked)return{ring:o,ang:nearest(L,o)}}}
-  const s=act.filter(r=>!r.locked).map(r=>[r,blocked(r)]).filter(x=>x[1].length).sort((a,b)=>(a[1].length-(a[0].bomb?5:0))-(b[1].length-(b[0].bomb?5:0)));
-  for(const[r,bl]of s)for(const L of bl){const o=other(L,r);if(!o.locked)return{ring:o,ang:nearest(L,o)}}
-  if(s.length)return{ring:s[0][0],ang:nearest(s[0][1][0],s[0][0])};
-  return null;
+  if(!plan||plan.i>=plan.steps.length||!active(rings[plan.steps[plan.i][0]])){
+    const res=solvePlan(rings,links,rng(level*131+moves*7+undo.length),80,r=>!active(r));
+    if(!res.log.length)return null;plan={steps:res.log,i:0};
+  }
+  const[id,a]=plan.steps[plan.i];return{ring:rings[id],ang:a};
+}
+// gleiche Wirkung wie der Planschritt (dieselben Verbindungen offen)? dann Plan weiterführen
+function planCheck(r){
+  if(!plan)return;const st=plan.steps[plan.i];
+  if(!st||st[0]!==r.id){plan=null;return}
+  const cs=a=>r.links.filter(li=>links[li].pts.some(p=>Math.abs(norm(angOn(links[li],r,p)-a))<OPEN)).join(',');
+  if(cs(r.rot)===cs(st[1]))plan.i++;else plan=null;
+}
+// Einrasten: nach dem Loslassen springt die Lücke auf eine nahe Verbindung bzw. genau zwischen zwei nahe Verbindungen
+const SNAP=0.27;
+function snapTarget(r){
+  if(plan&&plan.steps[plan.i]&&plan.steps[plan.i][0]===r.id&&Math.abs(norm(plan.steps[plan.i][1]-r.rot))<SNAP*1.5)return plan.steps[plan.i][1];
+  const A=[];r.links.forEach(li=>{const L=links[li];if(!active(other(L,r)))return;L.pts.forEach(p=>A.push([li,angOn(L,r,p)]))});
+  let best=null,bd=SNAP,dbl=false;
+  for(let i=0;i<A.length;i++)for(let j=i+1;j<A.length;j++){if(A[i][0]===A[j][0])continue;const d=norm(A[j][1]-A[i][1]);
+    if(Math.abs(d)<2*OPEN-0.04){const c=A[i][1]+d/2,e=Math.abs(norm(c-r.rot));if(e<SNAP&&(!dbl||e<bd)){bd=e;best=c;dbl=true}}}
+  if(!dbl)for(const[,a]of A){const e=Math.abs(norm(a-r.rot));if(e<bd){bd=e;best=a}}
+  return best;
+}
+function turn(r,d){r.rot=norm(r.rot+d);if(r.twin!=null){const t=rings[r.twin];if(active(t))t.rot=norm(t.rot+d)}}
+function finishRotation(r,m){
+  const t=snapTarget(r);
+  if(t!=null&&Math.abs(norm(t-r.rot))>0.004){r.anim={from:r.rot,to:r.rot+norm(t-r.rot),t0:now(),dur:90,move:m,snap:true};return}
+  planCheck(r);checkFree();if(m)bombTick();
 }
 function showHint(quiet){const h=computeHint();if(!h)return false;hint={ring:h.ring,ang:h.ang};if(!quiet||level===1)toast('Dreh die Lücke des leuchtenden Rings auf den Punkt');return true}
 
@@ -458,13 +541,13 @@ cv.addEventListener('pointermove',e=>{
   if(!drag)return;const r=drag.ring,p=toWorld(e),a=Math.atan2(p.y-r.y,p.x-r.x);
   if(!drag.moved&&Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)>8){drag.moved=true;drag.last=a}
   if(!drag.moved)return;
-  const da=norm(a-drag.last);drag.last=a;r.rot=norm(r.rot+da);drag.total+=Math.abs(da);feedback(r);
+  const da=norm(a-drag.last);drag.last=a;turn(r,da);drag.total+=Math.abs(da);feedback(r);
 });
 function endDrag(){
   if(!drag)return;const r=drag.ring,d=drag;drag=null;
   const count=()=>{if(lastRing!==r){moves++;lastRing=r;return true}return false};
   if(!d.moved){undo.push(d.snap);r.anim={from:r.rot,to:r.rot+STEP,t0:now(),dur:200,move:count()};sTick()}
-  else if(d.total>0.05){undo.push(d.snap);const m=count();checkFree();if(m)bombTick()}
+  else if(d.total>0.05){undo.push(d.snap);finishRotation(r,count())}
   if(undo.length>200)undo.shift();
   hud();
 }
@@ -532,6 +615,11 @@ function bomb(r,t){
   ctx.fillStyle=Math.sin(t/60)>0?'#ffd166':'#ff6b35';ctx.beginPath();ctx.arc(c.x+s*0.37,c.y-s*0.34,s*0.06,0,TAU);ctx.fill();
   ctx.fillStyle=warn?`rgb(255,${Math.round(120-pu*80)},${Math.round(90-pu*60)})`:'#fff';ctx.font=`800 ${Math.round(s*0.3)}px "Baloo 2",system-ui,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(r.bomb,c.x,c.y+s*0.05);
 }
+function twinMark(r){
+  const c=badge(r,'rgba(255,250,242,.95)'),s=view.s;ctx.lineWidth=s*0.05;ctx.strokeStyle=r.dark;
+  ctx.beginPath();ctx.arc(c.x-s*0.07,c.y,s*0.1,0,TAU);ctx.stroke();ctx.strokeStyle=r.color;ctx.beginPath();ctx.arc(c.x+s*0.07,c.y,s*0.1,0,TAU);ctx.stroke();
+  if(r.tw===2){ctx.fillStyle=r.dark;ctx.beginPath();ctx.arc(c.x,c.y+s*0.2,s*0.035,0,TAU);ctx.fill()}
+}
 function acorn(r){
   const c=pos(r),s=view.s,a=r.rot+Math.PI,inC=r.acornIn&&!r.bomb&&!r.locked,x=inC?c.x:c.x+Math.cos(a)*r.r*s,y=inC?c.y+s*0.04:c.y+Math.sin(a)*r.r*s,k=s*(inC?0.2:0.17);
   ctx.save();ctx.translate(x,y);ctx.fillStyle='#b5651d';ctx.strokeStyle='#6b3a10';ctx.lineWidth=1.5;
@@ -543,7 +631,7 @@ function acorn(r){
 function draw(){
   const t=now();
   rings.forEach(r=>{
-    if(r.anim){const k=Math.min(1,(t-r.anim.t0)/r.anim.dur),e=1-Math.pow(1-k,3);r.rot=r.anim.from+(r.anim.to-r.anim.from)*e;feedback(r);if(k>=1){const m=r.anim.move;r.rot=norm(r.anim.to);r.anim=null;checkFree();if(m)bombTick()}}
+    if(r.anim){const A=r.anim,k=Math.min(1,(t-A.t0)/A.dur),e=1-Math.pow(1-k,3);turn(r,norm(A.from+(A.to-A.from)*e-r.rot));feedback(r);if(k>=1){r.anim=null;if(A.snap){planCheck(r);checkFree();if(A.move)bombTick()}else finishRotation(r,A.move)}}
   });
   let changed=false;rings.forEach(r=>{if(r.removing!==null&&t-r.removing>480){r.removing=null;r.removed=true;changed=true}});
   if(changed){checkFree();checkWin()}
@@ -551,7 +639,7 @@ function draw(){
 
   ctx.setTransform(DPR,0,0,DPR,0,0);ctx.clearRect(0,0,W,H);
   const s=view.s,w=THICK*s,act=rings.filter(active),rg=act.filter(r=>r.type==='ring'),bars=act.filter(r=>r.type==='bar');
-  ctx.lineCap='round';ctx.strokeStyle='rgba(110,60,15,.14)';ctx.lineWidth=w+4;
+  ctx.lineCap='round';ctx.strokeStyle=document.body.classList.contains('dark')?'rgba(0,0,0,.3)':'rgba(110,60,15,.14)';ctx.lineWidth=w+4;
   rg.forEach(r=>{const c=pos(r);ctx.beginPath();ctx.arc(c.x,c.y+4,r.r*s,r.rot+GAP,r.rot+TAU-GAP);ctx.stroke()});
   bars.forEach(r=>{ctx.beginPath();ctx.moveTo(view.ox+r.x1*s,view.oy+r.y1*s+4);ctx.lineTo(view.ox+r.x2*s,view.oy+r.y2*s+4);ctx.stroke()});
   if(hint){const c=pos(hint.ring),pu=.5+.5*Math.sin(t/180);ctx.strokeStyle=`rgba(255,200,40,${.35+.3*pu})`;ctx.lineWidth=w+10+8*pu;ctx.beginPath();ctx.arc(c.x,c.y,hint.ring.r*s,0,TAU);ctx.stroke()}
@@ -562,7 +650,7 @@ function draw(){
     if(L.pts.length===1){clip(L);return}
     L.pts.forEach(p=>{if(covers(A,p.angA)||covers(B,p.angB))glow(view.ox+p.x*s,view.oy+p.y*s)})});
   rg.forEach(r=>{if(r.acorn)acorn(r)});
-  rg.forEach(r=>{if(r.locked)lock(r);else if(r.bomb)bomb(r,t)});
+  rg.forEach(r=>{if(r.locked)lock(r);else if(r.bomb)bomb(r,t);else if(r.twin!=null&&active(rings[r.twin]))twinMark(r)});
   if(hint){const c=pos(hint.ring),pu=.5+.5*Math.sin(t/150),x=c.x+Math.cos(hint.ang)*hint.ring.r*s,y=c.y+Math.sin(hint.ang)*hint.ring.r*s;
     ctx.fillStyle='#fff';ctx.strokeStyle='#ffb703';ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,y,w*(0.7+0.35*pu),0,TAU);ctx.fill();ctx.stroke()}
   rings.forEach(r=>{if(r.removing===null)return;const k=Math.min(1,(t-r.removing)/480),e=k*k,dx=r.dir.x*e*3.5*s,dy=r.dir.y*e*3.5*s-k*0.6*s;
@@ -587,7 +675,7 @@ $('#lvGrid').addEventListener('click',e=>{const b=e.target.closest('.cell');if(!
 $('#bLvClose').onclick=()=>hide('#ovLevels');
 $('#bLevels').onclick=levels;$('#bStartLevels').onclick=levels;
 $('#bHome').onclick=()=>{hud();show('#ovStart')};
-$('#bPlay').onclick=()=>{hide('#ovStart');if(level===1&&!won&&!hint)setTimeout(()=>showHint(true),700);if(!save.seenHelp)show('#ovHelp');tone(600,900,.08,'triangle',.06)};
+$('#bPlay').onclick=()=>{hide('#ovStart');if(level===1&&!won&&!hint)setTimeout(()=>{if(level===1&&!won&&!hint)showHint(true)},700);if(!save.seenHelp)show('#ovHelp');tone(600,900,.08,'triangle',.06)};
 $('#bStartHelp').onclick=()=>show('#ovHelp');
 $('#bHelpOk').onclick=()=>{hide('#ovHelp');save.seenHelp=true;persist()};
 $('#bSound').onclick=()=>{save.sound=!save.sound;persist();hud();if(save.sound)sTick()};
@@ -602,6 +690,7 @@ new ResizeObserver(resize).observe($('#stage'));
 resize();
 startLevel(Math.min(save.level||1,save.max));
 requestAnimationFrame(draw);
+if(location.hash==='#selftest')window.__rr={get rings(){return rings},get view(){return view},get hint(){return hint},get moves(){return moves},get par(){return par},get won(){return won},get level(){return level},showHint,startLevel,pick,cv};
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 // Display während des Spiels anlassen
 let wl=null;const keepAwake=async()=>{try{if('wakeLock' in navigator&&document.visibilityState==='visible')wl=await navigator.wakeLock.request('screen')}catch(e){}};
